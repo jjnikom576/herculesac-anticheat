@@ -9,7 +9,7 @@
 // Override at build time: /D HAC_PUBKEY_HEX="\"<64 hex chars>\""
 // Default is the checked-in dev public key at tools/keys/dev.public.key.hex.
 #ifndef HAC_PUBKEY_HEX
-#define HAC_PUBKEY_HEX "574e4292560fc97b57845943e9e325120ad23124362f90be73d2b34bb3a46d34"
+#define HAC_PUBKEY_HEX "046070fafe0c77fb20be806702cd95e76b1e6074cb1da2c75aacd990c21fc456"
 #endif
 
 namespace hac::manifest {
