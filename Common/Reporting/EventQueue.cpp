@@ -124,10 +124,9 @@ uint64_t EventQueue::ByteSize() const
 {
     if (!m_impl->db) return 0;
     sqlite3_stmt* stmt = nullptr;
-    // SQLite page_count * page_size gives current DB size
+    // Sum of payload lengths — reliable in WAL mode (page-count doesn't shrink immediately).
     sqlite3_prepare_v2(m_impl->db,
-        "SELECT page_count * page_size "
-        "FROM pragma_page_count() AS pc, pragma_page_size() AS ps;",
+        "SELECT COALESCE(SUM(LENGTH(payload)), 0) FROM events;",
         -1, &stmt, nullptr);
     uint64_t sz = 0;
     if (sqlite3_step(stmt) == SQLITE_ROW)
