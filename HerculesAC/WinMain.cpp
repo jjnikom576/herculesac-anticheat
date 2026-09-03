@@ -342,6 +342,9 @@ void InitProcess()
 	{
 		pi = StartProcess(Global::GamePath, config[L"starter"], L"");
 
+		if (pi.dwProcessId != 0)
+			hac::driver::StartProtect(pi.dwProcessId);
+
 		Json::Value root;
 		root["GamePath"] = Common::wideStringToString(Global::GamePath);
 		root["pid"] = (UInt)pi.dwProcessId;

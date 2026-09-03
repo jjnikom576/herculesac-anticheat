@@ -33,6 +33,7 @@
 #include "../Common/include/json/json.h"
 #include "../Common/include/List/vectorExt.h"
 #include "Threads/ActiveThread.h"
+#include "Ioctl/DriverClient.h"
 #include "Globals.h"
 
 

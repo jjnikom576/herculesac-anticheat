@@ -145,6 +145,7 @@
     <ClCompile Include="..\Common\Logger\Logger.cpp" />
     <ClCompile Include="Globals.cpp" />
     <ClCompile Include="HookCallSet\functionSet.cpp" />
+    <ClCompile Include="Ioctl\DriverClient.cpp" />
     <ClCompile Include="Threads\ActiveThread.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
@@ -163,6 +164,7 @@
     <ClInclude Include="Globals.h" />
     <ClInclude Include="HookCallSet\functionSet.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Ioctl\DriverClient.h" />
     <ClInclude Include="Threads\ActiveThread.h" />
     <ClInclude Include="WinMain.h" />
   </ItemGroup>
