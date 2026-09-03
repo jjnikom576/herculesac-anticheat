@@ -27,6 +27,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Manifest", "Common\Manifest
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ManifestTests", "Common\Manifest\tests\ManifestTests.vcxproj", "{9E1B4C2A-7F6D-4A3E-9C0B-2D5F8A6E1B3C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sign-manifest", "tools\sign-manifest\sign-manifest.vcxproj", "{FE3B9505-3381-4EAC-8163-891CB6DF326F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -151,6 +153,10 @@ Global
 		{9E1B4C2A-7F6D-4A3E-9C0B-2D5F8A6E1B3C}.Release|x86.Build.0 = Release|Win32
 		{9E1B4C2A-7F6D-4A3E-9C0B-2D5F8A6E1B3C}.Release|x64.ActiveCfg = Release|x64
 		{9E1B4C2A-7F6D-4A3E-9C0B-2D5F8A6E1B3C}.Release|x64.Build.0 = Release|x64
+		{FE3B9505-3381-4EAC-8163-891CB6DF326F}.Debug|x64.ActiveCfg = Debug|x64
+		{FE3B9505-3381-4EAC-8163-891CB6DF326F}.Debug|x64.Build.0 = Debug|x64
+		{FE3B9505-3381-4EAC-8163-891CB6DF326F}.Release|x64.ActiveCfg = Release|x64
+		{FE3B9505-3381-4EAC-8163-891CB6DF326F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
