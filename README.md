@@ -3,8 +3,9 @@
 A modular Windows anti-cheat framework built for older MMO / FPS clients
 (the packaged build targets `cstrike.exe`).  The project pairs a user-mode
 watchdog + injected hook DLL with an optional kernel-mode handle-stripping
-driver, all bound together with VMProtect virtualization and a small
-INI/MD5 manifest that ties the shipped binaries together.
+driver, all bound together with VMProtect virtualization and a signed
+JSON manifest (`hac.manifest` + `hac.manifest.sig`) that ties the shipped
+binaries together.
 
 > **Disclaimer.**  This repository is intended for research and educational
 > use — reverse-engineering, kernel programming, hook development and
@@ -21,7 +22,7 @@ INI/MD5 manifest that ties the shipped binaries together.
 1. [Component overview](#component-overview)
 2. [Runtime architecture](#runtime-architecture)
 3. [Detection techniques](#detection-techniques)
-4. [Configuration file — `hac.dat`](#configuration-file--hacdat)
+4. [Configuration file — `hac.manifest`](#configuration-file--hacmanifest)
 5. [Repository layout](#repository-layout)
 6. [Third-party code](#third-party-code)
 7. [Building](#building)
@@ -40,7 +41,7 @@ v143) contains seven projects grouped into a **user-mode** folder and a
 | Project          | Kind         | Arch     | Role |
 | ---------------- | ------------ | -------- | ---- |
 | `GameLauncher`   | `.exe`       | x64      | Thin bootstrapper the player double-clicks. Locates its own directory and spawns `HerculesAC\HerculesAC.aes` (post-VMProtect binary), passing the game path on the command line. |
-| `HerculesAC`     | `.exe`       | x64      | The watchdog.  Reads `hac.dat`, launches the game client, spawns both `GameMon` bitness variants, self-hooks `BaseThreadInitThunk` + `CreateThread` for self-defense, scans the process list / windows / resource icons / version strings for known hack tools, and CRC32-verifies its own hooks. |
+| `HerculesAC`     | `.exe`       | x64      | The watchdog.  Verifies the signed `hac.manifest` (Ed25519 signature + per-module SHA-256), launches the game client, spawns both `GameMon` bitness variants, self-hooks `BaseThreadInitThunk` + `CreateThread` for self-defense, scans the process list / windows / resource icons / version strings for known hack tools, and CRC32-verifies its own hooks. |
 | `GameMon`        | `.exe`       | x86 + x64 | Per-bitness monitor.  Loads `GameProtect(64).dll`, opens shared memory and publishes the game PID / paths for the injected DLLs to consume. |
 | `GameProtect`    | `.dll`       | x86 + x64 | The globally-injected hook DLL.  `SetWindowsHookEx(WH_GETMESSAGE, …)` from `GameMon` causes Windows to broadcast this DLL into every UI process on the desktop.  In `DllMain` it reads the shared memory, then Detours-hooks `ReadProcessMemory` / `WriteProcessMemory`.  Any call whose target PID equals the protected game PID triggers termination logic. |
 | `Bypass`         | `.dll`       | x86 + x64 | Standalone experiment showing tricks to *fool* the checks — hides `OLLYDBG` from `FindWindowW`, freezes a CRC32 function via `Sleep(-1)`, contains an x64 MASM stub (`Asm\AsmCallset.asm`).  Not loaded by the shipping product; kept for research. |
@@ -83,7 +84,8 @@ and Microsoft Detours (`Common\Detours\{x86,x64}\detours.lib`).
                                    ▼  message from the hook chain
                           ┌────────────────────────────────────────────┐
                           │  DllMain in every UI process:              │
-                          │   • read hac.dat / whitelist self by MD5   │
+                          │   • read hac.manifest / whitelist self by  │
+                          │     SHA-256 (whitelist_sha256[])           │
                           │   • open named shared memory (game PID)    │
                           │   • Detours-hook ReadProcessMemory /       │
                           │     WriteProcessMemory                     │
@@ -108,8 +110,12 @@ and Microsoft Detours (`Common\Detours\{x86,x64}\detours.lib`).
    the output.  (See `vmp.bat`.)
 2. **`HerculesAC::WinMain`** — takes a singleton lock (`HACMutexName`
    mutex), shows the splash bitmap `assets\hac.bmp` for 5 s, then:
-   - `LoadConfig` parses `hac.dat` and asserts every referenced file
-     is present in the game / anti-cheat directories.
+   - Loads and verifies `hac.manifest`: `Manifest::Load` parses the JSON,
+     `Manifest::VerifySignature` checks the Ed25519 detached signature
+     against the compile-time embedded public key, then
+     `Manifest::VerifyModule` SHA-256-hashes every referenced binary and
+     asserts it is present and unmodified. Any failure fails closed
+     (event log + `MessageBox` + exit) before the game is ever launched.
    - `InitFunctionPointer` resolves `BaseThreadInitThunk`,
      `RtlExitUserThread`, `CreateThread`.
    - `SetupHook` Detours-hooks `BaseThreadInitThunk` and
@@ -136,11 +142,12 @@ and Microsoft Detours (`Common\Detours\{x86,x64}\detours.lib`).
    hook.  From that point on every UI process on the desktop that
    receives a queued message will load `GameProtect(64).dll`.
 4. **`GameProtect::DllMain`** — in *every* process the hook is
-   injected into: read `hac.dat`, MD5 the module file, whitelist
-   self if the hash matches an entry in the `[MD5]` section,
-   otherwise install Detours hooks for `ReadProcessMemory` and
-   `WriteProcessMemory` and share the same `SharedMemory` pointer
-   with the host via the exported `GetSharedMemoryPtr`.
+   injected into: read `hac.manifest`, SHA-256 the module file,
+   whitelist self if the hash matches an entry in
+   `whitelist_sha256[]`, otherwise install Detours hooks for
+   `ReadProcessMemory` and `WriteProcessMemory` and share the same
+   `SharedMemory` pointer with the host via the exported
+   `GetSharedMemoryPtr`.
 
 ### IPC — shared memory schema
 
@@ -186,36 +193,77 @@ on its own polling thread:
 | UI-level message hook | `GameProtect/Hook/MsgHook/MsgHook.cpp` | The `WH_GETMESSAGE` hook itself is the injection primitive — the callback is a plain pass-through (`CallNextHookEx`). |
 | Kernel handle stripping | `herculeskernel/Protect/Callback/Callbacks.cpp` | Ring-0 `Ob*` pre-op callbacks remove `VM_READ`/`VM_WRITE` for process handles and `SUSPEND_RESUME` for thread handles targeting the protected PID.  Effectively blocks user-mode RPM/WPM and thread freezing even against callers that bypass the user-mode hooks. |
 
-## Configuration file — `hac.dat`
+## Configuration file — `hac.manifest`
 
-An INI file generated by `calculateMD5.bat` at build time and read by
-every user-mode component through `GetPrivateProfileString`.
+A signed JSON (schema `version: 2`) file generated at build time by
+`tools/gen-manifest.ps1` and read by every user-mode component through
+`hac::manifest::Manifest` (`Common/Manifest/Manifest.h`). It replaces the
+old `hac.dat` INI + MD5 table (see *Recent history*) with a cryptographically
+verified equivalent.
 
-```ini
-[Game]
-starter  = cstrike.exe    ; process HerculesAC actually launches
-Client   = cstrike.exe    ; process HerculesAC monitors for liveness
-GameMon  = GameMon.aes    ; 32-bit monitor executable
-GameMon64 = GameMon64.aes ; 64-bit monitor executable
-
-[MD5]
-hash0 = <MD5 of HerculesAC.aes>
-hash1 = <MD5 of GameMon.aes>
-hash2 = <MD5 of GameMon64.aes>
-hash3 = <MD5 of GameLauncher.exe>
-hash4 = <MD5 of cstrike.exe>
-Count = 5
+```json
+{
+  "version": 2,
+  "issued_at": "2026-09-15T00:00:00Z",
+  "game": {
+    "id": "cstrike-1.6",
+    "starter": "cstrike.exe",
+    "client": "cstrike.exe",
+    "monitor_x86": "GameMon.aes",
+    "monitor_x64": "GameMon64.aes"
+  },
+  "modules": [
+    { "path": "HerculesAC\\HerculesAC.aes", "sha256": "<sha256 hex>", "size": 123456 },
+    { "path": "GameMon.aes",                "sha256": "<sha256 hex>", "size": 123456 },
+    { "path": "GameMon64.aes",              "sha256": "<sha256 hex>", "size": 123456 },
+    { "path": "GameProtect.dll",            "sha256": "<sha256 hex>", "size": 123456 },
+    { "path": "GameProtect64.dll",          "sha256": "<sha256 hex>", "size": 123456 }
+  ],
+  "whitelist_sha256": ["<sha256 hex>", "..."],
+  "reporting": {
+    "endpoint": "https://ac-report.example.com/v1/events",
+    "server_cert_pin_sha256": ""
+  }
+}
 ```
 
-`Count` is used by `GameProtect::LoadConfig` to size the whitelist:
-whenever `GameProtect(64).dll` is injected into a new process it MD5s
-the host module file and — if the hash appears in `[MD5]` — skips
-installing the RPM/WPM hooks in that process.  This is how the
-watchdog / monitor / launcher / game itself avoid hooking themselves.
+- **`game`** — which executable is the game (`starter`/`client`) and which
+  packed monitor binaries (`monitor_x86`/`monitor_x64`) HerculesAC spawns.
+  Replaces the old `[Game]` INI section.
+- **`modules`** — every shipped binary's relative path, SHA-256 hash and
+  byte size. `Manifest::VerifyModule` re-hashes the file on disk and
+  rejects a mismatch (`ModuleHashMismatch`) or a missing file
+  (`ModuleMissing`). Replaces the old `[MD5]`/`Count` INI section.
+- **`whitelist_sha256`** — the SHA-256 hashes `GameProtect(64).dll`
+  compares its own host-module hash against before deciding whether to
+  install the RPM/WPM hooks in a given process. This is how the
+  watchdog / monitor / launcher / game itself avoid hooking themselves.
+- **`reporting`** — the telemetry endpoint and (optional) certificate pin
+  used by future reporting features.
 
-The `[Game]` fallback of `starter == Client == cstrike.exe` is the
-shipped default; changing the target game means editing
-`calculateMD5.bat` to reference the new executable.
+**Signature.** `hac.manifest` ships next to a sibling `hac.manifest.sig` —
+a raw 64-byte Ed25519 detached signature (libsodium) over the manifest's
+exact bytes, produced by `tools/sign-manifest` from the private key at
+`tools/keys/hac-dev.private.key`. Every consumer (`HerculesAC`, `GameMon`,
+`GameProtect`) calls `Manifest::Load` then `Manifest::VerifySignature`
+against a public key **embedded at compile time**
+(`Common/Manifest/PublicKey.h`, `HAC_PUBKEY_HEX`, default
+`046070fafe0c77fb20be806702cd95e76b1e6074cb1da2c75aacd990c21fc456` — the
+checked-in dev key at `tools/keys/dev.public.key.hex`) — the public key is
+never read from the deploy directory, so a tampered manifest cannot supply
+its own matching key.
+
+**Fail-closed.** Any `ManifestError` (missing file, oversized file,
+malformed JSON, unsupported `version`, invalid signature, missing/mismatched
+module) stops the boot sequence before the game is launched. `HerculesAC`
+mirrors the failure to the Windows Event Log (`Application/HerculesAC`,
+event ID `1001`) via `WriteEventLog`, then shows a `MessageBox` and exits —
+see `docs/testing/m1-e2e-tamper.md` for the manual test procedure that
+exercises every one of these paths.
+
+Changing the target game means regenerating the manifest with
+`tools/gen-manifest.ps1 -GameId <id> -GameDir <path> -PrivateKey
+tools\keys\hac-dev.private.key` rather than hand-editing an INI file.
 
 ## Repository layout
 
@@ -254,11 +302,16 @@ herculesac-anticheat/
 │
 ├── captures/                     Empty; reserved for runtime capture dumps
 │
-├── Builder.bat                   Full solution build (x86 + x64) → vmp → hac.dat
+├── Builder.bat                   Full solution build (x86 + x64) → vmp → hac.manifest
 ├── ReBuilder.bat                 Same as above with /t:Rebuild
-├── Project.bat                   Absolute paths to each .vcxproj + build config
+├── Project.bat                   Repo-relative paths to each .vcxproj + build config
 ├── vmp.bat                       Runs VMProtect_Con.exe on the three shipped exes
-├── calculateMD5.bat              Emits hac.dat with the [Game] and [MD5] tables
+│
+├── tools/
+│   ├── gen-manifest.ps1          Emits hac.manifest + hac.manifest.sig at build time
+│   ├── sign-manifest/            Ed25519 detached-signature CLI (libsodium)
+│   ├── keys/                     Dev signing keypair (hac-dev.private.key + dev.public.key.hex)
+│   └── register-eventlog.ps1     One-time Application/HerculesAC event source registration
 │
 ├── .gitignore                    Stock Visual Studio ignore file
 └── README.md                     ← this file
@@ -304,8 +357,9 @@ Vendored inside the repository (no package manager is used):
   loading it.
 - **VMProtect Ultimate** with `VMProtect_Con.exe` available; the path
   is set in `vmp.bat` (`..\anticheat\VMProtect Ultimate v3.3.1 …`).
-- **`certutil`** (in-box on Windows) is used by `calculateMD5.bat` to
-  emit MD5 hashes.
+- **PowerShell 5.1+** (in-box on Windows) is used by
+  `tools/gen-manifest.ps1` (via `Get-FileHash`) to compute module SHA-256
+  hashes and emit `hac.manifest` / `hac.manifest.sig`.
 - **Administrator shell** is required — the kernel driver install and
   the global `WH_GETMESSAGE` hook usually need it.
 
@@ -321,26 +375,20 @@ msbuild HerculesAC     /p:Platform=x64
 msbuild GameMon        /p:Platform=x86 + x64
 msbuild GameProtect    /p:Platform=x86 + x64
 vmp.bat            -> VMProtect_Con.exe HerculesAC.exe / GameMon.exe / GameMon64.exe
-calculateMD5.bat   -> emits x64\Debug\hac.dat with [Game] + [MD5] tables
+tools\gen-manifest.ps1 -> emits x64\Debug\hac.manifest + hac.manifest.sig
+                          (SHA-256 module table, signed with tools\keys\hac-dev.private.key)
 ```
 
 `ReBuilder.bat` does the same with `/t:Rebuild`.  Both call
 `pause` at the end so the console does not close on error.
 
-> **Important — fix the paths first.**  `Project.bat` and
-> `calculateMD5.bat` still reference the old checkout location
-> `D:\Projects\HerculesAC\...`.  The current repository lives at
-> `D:\Project\Anticheat\herculesac-anticheat`, so those variables
-> **must** be updated before the batch chain will find the .vcxproj
-> files or the compiled outputs.  See *Known issues*.
-
 ### Building from Visual Studio directly
 
 `HerculesAC.sln` opens cleanly in VS 2022.  Right-click **Build
-Solution**, then run `vmp.bat` and `calculateMD5.bat` from the repo
-root to produce the packed binaries and `hac.dat`.  The driver
-(`herculeskernel`) has to be built with the WDK-aware toolset — pick
-**x64** and set the deploy target if you use the WDK's Test/Deploy
+Solution**, then run `vmp.bat` and `tools\gen-manifest.ps1` from the repo
+root to produce the packed binaries and `hac.manifest` / `hac.manifest.sig`.
+The driver (`herculeskernel`) has to be built with the WDK-aware toolset —
+pick **x64** and set the deploy target if you use the WDK's Test/Deploy
 integration.
 
 ### Configurations
@@ -360,7 +408,8 @@ directory should look like this:
 ```
 <install dir>/
 ├── GameLauncher.exe
-├── hac.dat
+├── hac.manifest
+├── hac.manifest.sig
 ├── GameMon.aes           (VMProtect-packed GameMon.exe   x86)
 ├── GameMon64.aes         (VMProtect-packed GameMon.exe   x64)
 ├── GameProtect.dll       (x86)
@@ -370,7 +419,7 @@ directory should look like this:
 ├── assets/
 │   └── hac.bmp
 ├── hercules_log.txt      (created at runtime by Logger)
-└── <game dir>/           (contains starter/Client from hac.dat, e.g. cstrike.exe)
+└── <game dir>/           (contains starter/Client from hac.manifest, e.g. cstrike.exe)
 ```
 
 The kernel driver (`herculeskernel.sys`) ships separately and is
@@ -389,12 +438,11 @@ does not pretend otherwise.
    PID; a real integration should learn the game PID via
    `IOCTL_START_PROTECT` (already defined in `Common/Shared/IOCTLs.h`
    but unused).
-2. **Absolute paths in the batch files.**  `Project.bat`,
-   `vmp.bat` (mostly relative now, but still names `D:\Projects\…`
-   for the exe outputs) and `calculateMD5.bat` all bake in
-   `D:\Projects\HerculesAC\...`.  These paths do not exist in the
-   current checkout and will silently produce empty commands.  Convert
-   them to `%~dp0`-relative before shipping.
+2. **Absolute paths in the batch files.**  `Project.bat` and the
+   manifest generation step are now repo-relative, but `vmp.bat`'s
+   `VMProtect_Con.exe` path still points outside the checkout
+   (`..\anticheat\VMProtect Ultimate v3.3.1 …`).  Convert it to a
+   `%~dp0`-relative or environment-variable-driven path before shipping.
 3. **`wcscpy` with fixed 256-wchar buffers** for `szExe`, `sPath`
    and `sCommandLine` in both `HerculesAC` and `GameMon` `WinMain.cpp`.
    The JSON payload from `HerculesAC::InitProcess` is written straight
@@ -434,10 +482,10 @@ does not pretend otherwise.
 11. **`hercules_log.txt` sits next to the launcher** with no rotation
     and no size cap — the two 100 ms scanner loops can produce a lot
     of `outDebug` output over time.
-12. **`certutil -hashfile` in `calculateMD5.bat`** returns the hash
-    plus surrounding text; the current filter (`findstr /v "hash of
-    file"`) drops the wrong line on non-English locales.  Consider
-    switching to PowerShell's `Get-FileHash`.
+12. **The dev private key at `tools/keys/hac-dev.private.key` is a
+    shared credential** — anyone with commit access can produce a
+    valid manifest. Rotate before pilot deployments (see
+    `docs/signing.md` — coming in M6).
 
 ## Recent history
 
