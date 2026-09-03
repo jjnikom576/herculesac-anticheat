@@ -1,4 +1,4 @@
-#include "../WinMain.h"
+ï»¿#include "../WinMain.h"
 #include "ActiveThread.h"
 #include "../../Common/Hash/MD5/MD5.h"
 
@@ -267,7 +267,7 @@ BOOL CheckVersionInfo()
 	{
 		for (const auto& process : processes)
 		{
-			if (_wcsicmp(process.processName.c_str(), _T("HerculesAC.aes")) != 0)  // ²»Çø·Ö´óÐ¡Ð´±È½Ï
+			if (_wcsicmp(process.processName.c_str(), _T("HerculesAC.aes")) != 0)  // Case-insensitive comparison
 			{
 				if (CheckStringFileInfo(process.FullPath))
 				{

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  HerculesAC WiX installer
+  Build:  wix build installer\HerculesAC.wxs -d Version=1.0.0 -d BinDir=x64\Release
+  Requires: WiX 5+  (dotnet tool install --global wix)
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="HerculesAC"
+           Manufacturer="HerculesAC"
+           Version="!(bind.FileVersion.HerculesACExe)"
+           UpgradeCode="B2E3F4A5-C6D7-8901-BCDE-F12345678901"
+           Scope="perMachine"
+           InstallerVersion="500"
+           Compressed="yes">
+
+    <!-- ── Upgrade logic ─────────────────────────────────────────────── -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of HerculesAC is already installed." />
+
+    <!-- ── Media ─────────────────────────────────────────────────────── -->
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- ── Feature tree ──────────────────────────────────────────────── -->
+    <Feature Id="ProductFeature" Title="HerculesAC" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="KernelDriverComponent" />
+      <ComponentGroupRef Id="RegistryComponent" />
+    </Feature>
+
+    <!-- ── Installation directory ────────────────────────────────────── -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="HerculesAC" />
+    </StandardDirectory>
+
+    <!-- ── Userspace binaries ─────────────────────────────────────────  -->
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="HerculesACExe">
+        <File Id="HerculesACExe" Source="$(var.BinDir)\HerculesAC.exe" KeyPath="yes" />
+      </Component>
+
+      <Component Id="GameMonExe">
+        <File Source="$(var.BinDir)\GameMon.exe" />
+      </Component>
+
+      <Component Id="GameMon64Exe">
+        <File Source="$(var.BinDir)\GameMon64.exe" />
+      </Component>
+
+      <Component Id="GameProtect64Dll">
+        <File Source="$(var.BinDir)\GameProtect64.dll" />
+      </Component>
+
+      <Component Id="HacManifest">
+        <File Source="$(var.BinDir)\hac.manifest" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- ── Kernel driver ─────────────────────────────────────────────── -->
+    <ComponentGroup Id="KernelDriverComponent" Directory="INSTALLFOLDER">
+      <Component Id="HerculesKernelSys">
+        <File Id="HerculesKernelSys"
+              Source="$(var.BinDir)\herculeskernel.sys"
+              KeyPath="yes" />
+
+        <!-- Register and start the kernel driver service. -->
+        <ServiceInstall Id="HerculesKernelService"
+                        Name="herculeskernel"
+                        DisplayName="HerculesAC Kernel Protection"
+                        Description="HerculesAC kernel-level anti-cheat protection driver."
+                        Type="kernelDriver"
+                        Start="demand"
+                        ErrorControl="normal"
+                        Interactive="no" />
+
+        <ServiceControl Id="StartHerculesKernelService"
+                        Name="herculeskernel"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Wait="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- ── Registry entries ───────────────────────────────────────────── -->
+    <ComponentGroup Id="RegistryComponent" Directory="INSTALLFOLDER">
+      <Component Id="RegistryEntries" Guid="*">
+        <RegistryValue Root="HKLM"
+                       Key="SOFTWARE\HerculesAC"
+                       Name="InstallDir"
+                       Type="string"
+                       Value="[INSTALLFOLDER]"
+                       KeyPath="yes" />
+
+        <RegistryValue Root="HKLM"
+                       Key="SOFTWARE\HerculesAC"
+                       Name="Version"
+                       Type="string"
+                       Value="$(var.Version)" />
+
+        <!-- Windows Firewall exception for HerculesAC.exe -->
+        <util:FirewallException Id="HerculesACFirewall"
+                                Name="HerculesAC"
+                                Program="[INSTALLFOLDER]HerculesAC.exe"
+                                Scope="localSubnet"
+                                Protocol="tcp" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- ── Start menu shortcut ────────────────────────────────────────── -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="HerculesAC" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="ApplicationShortcuts" Directory="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="*">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="HerculesAC"
+                  Description="HerculesAC Anti-Cheat"
+                  Target="[INSTALLFOLDER]HerculesAC.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\HerculesAC"
+                       Name="installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+  </Package>
+</Wix>

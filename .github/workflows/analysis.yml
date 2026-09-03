@@ -1,0 +1,68 @@
+name: Static Analysis
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  msvc-analyze:
+    name: MSVC /analyze
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Run MSVC /analyze on HerculesAC
+        run: |
+          msbuild HerculesAC\HerculesAC.vcxproj `
+            /p:Configuration=Debug /p:Platform=x64 `
+            /p:RunCodeAnalysis=true `
+            /p:EnablePREfast=true `
+            /t:Build /v:m /nologo
+        continue-on-error: true
+
+      - name: Run MSVC /analyze on Reporting library
+        run: |
+          msbuild Common\Reporting\Reporting.vcxproj `
+            /p:Configuration=Debug /p:Platform=x64 `
+            /p:RunCodeAnalysis=true `
+            /p:EnablePREfast=true `
+            /t:Build /v:m /nologo
+        continue-on-error: true
+
+  codeql:
+    name: CodeQL (C++)
+    runs-on: windows-2022
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+          queries: security-extended
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Build for CodeQL
+        run: |
+          msbuild HerculesAC\HerculesAC.vcxproj `
+            /p:Configuration=Debug /p:Platform=x64 /t:Build /v:m /nologo
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: cpp

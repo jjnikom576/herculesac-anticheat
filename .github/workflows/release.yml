@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Release build
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Install WDK 10.0.26100
+        shell: powershell
+        run: |
+          $url = "https://go.microsoft.com/fwlink/?linkid=2294280"
+          $out = "$env:TEMP\wdksetup.exe"
+          Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
+          Start-Process -FilePath $out -ArgumentList "/q" -Wait
+
+      - name: Build kernel driver (Release|x64)
+        run: |
+          $msbuild = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+          & $msbuild herculeskernel\herculeskernel.vcxproj `
+            /p:Configuration=Release /p:Platform=x64 /t:Rebuild /v:m /nologo
+
+      - name: Build all userspace (Release|x64)
+        run: |
+          foreach ($proj in @(
+            "HerculesAC\HerculesAC.vcxproj",
+            "GameMon\GameMon.vcxproj",
+            "GameProtect\GameProtect.vcxproj"
+          )) {
+            msbuild $proj /p:Configuration=Release /p:Platform=x64 /t:Rebuild /v:m /nologo
+          }
+
+      - name: Build GameMon x86
+        run: |
+          msbuild GameMon\GameMon.vcxproj /p:Configuration=Release /p:Platform=x86 /t:Rebuild /v:m /nologo
+
+      - name: Build GameProtect x86
+        run: |
+          msbuild GameProtect\GameProtect.vcxproj /p:Configuration=Release /p:Platform=x86 /t:Rebuild /v:m /nologo
+
+      - name: Install WiX Toolset
+        run: dotnet tool install --global wix
+
+      - name: Build MSI installer
+        shell: powershell
+        run: |
+          $tag  = "${{ github.ref_name }}"
+          $ver  = $tag.TrimStart("v")
+          if ($ver -notmatch '^\d+\.\d+\.\d+') { $ver = "1.0.0" }
+          wix build installer\HerculesAC.wxs `
+            -d Version=$ver `
+            -d BinDir="$PWD\x64\Release" `
+            -out installer\HerculesAC-$tag.msi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: HerculesAC ${{ github.ref_name }}
+          body: |
+            ## HerculesAC ${{ github.ref_name }}
+
+            ### Components
+            - HerculesAC.exe — launcher + anti-cheat host
+            - herculeskernel.sys — kernel protection driver
+            - GameMon.exe / GameMon64.exe — game monitor
+            - GameProtect.dll / GameProtect64.dll — in-process hook DLL
+
+            ### Installation
+            Run `HerculesAC-${{ github.ref_name }}.msi` as Administrator.
+            The installer registers the kernel driver service automatically.
+          files: |
+            installer/HerculesAC-${{ github.ref_name }}.msi
+            x64/Release/HerculesAC.exe
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}

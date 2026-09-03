@@ -8,3 +8,7 @@
 *.aes    binary
 *.lib    binary
 *.pdb    binary
+
+# Git LFS — large binary signature databases stored in assets/hacktools-sig/
+assets/hacktools-sig/**/*.bin filter=lfs diff=lfs merge=lfs -text
+assets/hacktools-sig/**/*.png filter=lfs diff=lfs merge=lfs -text

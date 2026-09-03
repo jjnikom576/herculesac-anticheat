@@ -1,0 +1,104 @@
+name: CI Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: ${{ matrix.config }}-${{ matrix.platform }}
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Debug, Release]
+        platform: [x64, x86]
+        exclude:
+          # Kernel driver only ships x64; x86 builds skip the driver project.
+          - platform: x86
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      # ── Userspace projects ─────────────────────────────────────────────────
+      - name: Build HerculesAC (${{ matrix.config }}|${{ matrix.platform }})
+        run: |
+          msbuild HerculesAC\HerculesAC.vcxproj `
+            /p:Configuration=${{ matrix.config }} `
+            /p:Platform=${{ matrix.platform }} `
+            /t:Build /v:m /nologo
+
+      - name: Build GameMon (${{ matrix.config }}|${{ matrix.platform }})
+        run: |
+          msbuild GameMon\GameMon.vcxproj `
+            /p:Configuration=${{ matrix.config }} `
+            /p:Platform=${{ matrix.platform }} `
+            /t:Build /v:m /nologo
+
+      - name: Build GameProtect (${{ matrix.config }}|${{ matrix.platform }})
+        if: matrix.platform == 'x64'
+        run: |
+          msbuild GameProtect\GameProtect.vcxproj `
+            /p:Configuration=${{ matrix.config }} `
+            /p:Platform=${{ matrix.platform }} `
+            /t:Build /v:m /nologo
+
+      # ── Unit tests ─────────────────────────────────────────────────────────
+      - name: Build ReportingTests (${{ matrix.config }}|x64)
+        if: matrix.platform == 'x64'
+        run: |
+          msbuild Common\Reporting\tests\ReportingTests.vcxproj `
+            /p:Configuration=${{ matrix.config }} `
+            /p:Platform=x64 `
+            /t:Build /v:m /nologo
+
+      - name: Run ReportingTests
+        if: matrix.platform == 'x64'
+        run: |
+          $exe = "Common\Reporting\tests\x64\${{ matrix.config }}\ReportingTests.exe"
+          if (Test-Path $exe) { & $exe } else { Write-Warning "Test binary not found: $exe" }
+
+      # ── Upload build artifacts ─────────────────────────────────────────────
+      - name: Upload binaries
+        if: matrix.platform == 'x64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: herculesac-${{ matrix.config }}-${{ matrix.platform }}
+          path: |
+            x64/${{ matrix.config }}/*.exe
+            x64/${{ matrix.config }}/*.dll
+          retention-days: 7
+
+  # ── Kernel driver (x64 Debug only; requires WDK) ──────────────────────────
+  kernel:
+    name: Kernel-Debug-x64
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install WDK 10.0.26100
+        shell: powershell
+        run: |
+          $url = "https://go.microsoft.com/fwlink/?linkid=2294280"
+          $out = "$env:TEMP\wdksetup.exe"
+          Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
+          Start-Process -FilePath $out -ArgumentList "/q" -Wait
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Build herculeskernel (Debug|x64)
+        run: |
+          $msbuild = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+          & $msbuild herculeskernel\herculeskernel.vcxproj `
+            /p:Configuration=Debug /p:Platform=x64 `
+            /t:Build /v:m /nologo
