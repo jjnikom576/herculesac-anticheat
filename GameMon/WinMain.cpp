@@ -3,8 +3,6 @@
 
 Logger logger;
 
-PFN_SETUPMSGHOOK SetupMsgHook;
-PFN_UNHOOKMSGHOOK UnHookMsgHook;
 PFN_GETSHAREDMEMORYPTR GetSharedMemoryPtr;
 
 namespace Global
@@ -39,12 +37,13 @@ void SharedGameClient()
 
 void SetupHook()
 {
-	SetupMsgHook(Global::hGameProtect);
+	// WH_GETMESSAGE global hook removed in M3.
+	// GameProtect.dll is now injected by HerculesAC.exe via CreateRemoteThread.
 }
 
 void UnHook()
 {
-	UnHookMsgHook();
+	// No-op: DLL_PROCESS_DETACH in GameProtect handles unhooking.
 }
 
 void InitFunctionPtr()
@@ -54,8 +53,6 @@ void InitFunctionPtr()
 #else
 	Global::hGameProtect = LoadLibrary(L"./GameProtect.dll");
 #endif
-	SetupMsgHook = (PFN_SETUPMSGHOOK)GetProcAddress(Global::hGameProtect, "SetupMsgHook");
-	UnHookMsgHook = (PFN_UNHOOKMSGHOOK)GetProcAddress(Global::hGameProtect, "UnHookMsgHook");
 	GetSharedMemoryPtr = (PFN_GETSHAREDMEMORYPTR)GetProcAddress(Global::hGameProtect, "GetSharedMemoryPtr");
 }
 

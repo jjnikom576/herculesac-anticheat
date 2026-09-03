@@ -39,8 +39,6 @@ typedef struct _STARTUP_INFO
 	TCHAR sPath[256];
 }STARTUP_INFO, * PSTARTUP_INFO;
 
-typedef void(* PFN_SETUPMSGHOOK)(HINSTANCE hinstDLL);
-typedef void(* PFN_UNHOOKMSGHOOK)();
 typedef SharedMemory* (* PFN_GETSHAREDMEMORYPTR)();
 typedef void(* PFN_ADDRESS)();
 

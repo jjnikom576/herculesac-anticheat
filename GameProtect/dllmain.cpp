@@ -1,5 +1,4 @@
 #include "dllmain.h"
-#include "Hook/MsgHook/MsgHook.h"
 #include "Threads/ActiveThread.h"
 #include "Hook/DetoursHook/HookCallSet/functionSet.h"
 #include "Globals.h"
