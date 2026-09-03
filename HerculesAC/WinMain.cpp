@@ -133,8 +133,18 @@ PROCESS_INFORMATION StartProcess(std::wstring processPath, std::wstring procName
 
 static hac::manifest::Manifest g_manifest;
 
+static void WriteEventLog(const wchar_t* reason)
+{
+	HANDLE h = RegisterEventSourceW(NULL, L"HerculesAC");
+	if (!h) return;
+	LPCWSTR strings[1] = { reason };
+	ReportEventW(h, EVENTLOG_ERROR_TYPE, 0 /*category*/, 1001 /*event id*/, NULL, 1, 0, strings, NULL);
+	DeregisterEventSource(h);
+}
+
 static void FailAndExit(const wchar_t* reason)
 {
+	WriteEventLog(reason);
 	logger.outDebug(_T("Manifest verification failed: %s"), reason);
 	::MessageBox(NULL, reason, _T("HerculesAC Error:"), MB_ICONWARNING | MB_SYSTEMMODAL);
 	ExitProcess(1);

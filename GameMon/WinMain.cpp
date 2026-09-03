@@ -96,8 +96,18 @@ BOOL FindProgram(std::vector<std::wstring> files, std::wstring Program)
 
 static hac::manifest::Manifest g_manifest;
 
+static void WriteEventLog(const wchar_t* reason)
+{
+	HANDLE h = RegisterEventSourceW(NULL, L"HerculesAC");
+	if (!h) return;
+	LPCWSTR strings[1] = { reason };
+	ReportEventW(h, EVENTLOG_ERROR_TYPE, 0 /*category*/, 1002 /*event id*/, NULL, 1, 0, strings, NULL);
+	DeregisterEventSource(h);
+}
+
 static void FailAndExit(const wchar_t* reason)
 {
+	WriteEventLog(reason);
 	logger.Log((std::string("Manifest error: ") + Common::wideStringToString(reason)).c_str());
 	::MessageBox(NULL, reason, _T("HAC Warning:"), MB_ICONWARNING | MB_SYSTEMMODAL);
 	ExitProcess(1);

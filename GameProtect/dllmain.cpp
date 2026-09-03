@@ -10,6 +10,14 @@ Logger logger;
 
 static hac::manifest::Manifest g_manifest;
 
+static void WriteEventLog(const wchar_t* reason)
+{
+	HANDLE h = RegisterEventSourceW(NULL, L"HerculesAC");
+	if (!h) return;
+	LPCWSTR strings[1] = { reason };
+	ReportEventW(h, EVENTLOG_ERROR_TYPE, 0 /*category*/, 1003 /*event id*/, NULL, 1, 0, strings, NULL);
+	DeregisterEventSource(h);
+}
 
 void ReportProcessInfo()
 {
@@ -122,14 +130,18 @@ void LoadConfig(HINSTANCE hinstDLL)
 	std::wstring manifest_path = root + L"hac.manifest";
 	if (g_manifest.Load(manifest_path) != hac::manifest::ManifestError::Ok)
 	{
-		logger.Log("GameProtect: manifest missing/malformed; refusing to hook");
+		const char* reason = "GameProtect: manifest missing/malformed; refusing to hook";
+		logger.Log(reason);
+		WriteEventLog(Common::stringToWideString(reason).c_str());
 		return;
 	}
 	uint8_t pk[32];
 	std::memcpy(pk, hac::manifest::kEmbeddedPublicKey.data(), 32);
 	if (g_manifest.VerifySignature(pk) != hac::manifest::ManifestError::Ok)
 	{
-		logger.Log("GameProtect: manifest signature invalid; refusing to hook");
+		const char* reason = "GameProtect: manifest signature invalid; refusing to hook";
+		logger.Log(reason);
+		WriteEventLog(Common::stringToWideString(reason).c_str());
 		return;
 	}
 }
