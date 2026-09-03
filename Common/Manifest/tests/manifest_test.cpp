@@ -89,3 +89,28 @@ TEST(ManifestVerify, TamperedPayloadRejected) {
 	LoadPubKey(pk);
 	EXPECT_EQ(m.VerifySignature(pk), ManifestError::SignatureInvalid);
 }
+
+TEST(ManifestVerifyModule, MatchingModuleAccepted) {
+	Manifest m;
+	ASSERT_EQ(m.Load(L"fixtures/valid.manifest"), ManifestError::Ok);
+	EXPECT_EQ(m.VerifyModule(L"fixtures/module_a.bin"), ManifestError::Ok);
+	EXPECT_EQ(m.VerifyModule(L"fixtures/module_b.bin"), ManifestError::Ok);
+}
+
+TEST(ManifestVerifyModule, MissingModuleRejected) {
+	Manifest m;
+	ASSERT_EQ(m.Load(L"fixtures/valid.manifest"), ManifestError::Ok);
+	EXPECT_EQ(m.VerifyModule(L"fixtures/does_not_exist.bin"), ManifestError::ModuleMissing);
+}
+
+TEST(ManifestVerifyModule, SizeMismatchDetected) {
+	Manifest m;
+	ASSERT_EQ(m.Load(L"fixtures/size_mismatch.manifest"), ManifestError::Ok);
+	EXPECT_EQ(m.VerifyModule(L"fixtures/module_a.bin"), ManifestError::ModuleSizeMismatch);
+}
+
+TEST(ManifestVerifyModule, HashMismatchDetected) {
+	Manifest m;
+	ASSERT_EQ(m.Load(L"fixtures/hash_mismatch.manifest"), ManifestError::Ok);
+	EXPECT_EQ(m.VerifyModule(L"fixtures/module_a.bin"), ManifestError::ModuleHashMismatch);
+}
