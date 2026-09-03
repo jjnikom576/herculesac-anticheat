@@ -1,13 +1,19 @@
 #include "Reporter.h"
 #include "EventQueue.h"
 #include <winhttp.h>
+#include <wincrypt.h>
+#include <sodium.h>
 #include <atomic>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <sstream>
+#include <iomanip>
+#include <algorithm>
 
 #pragma comment(lib, "winhttp.lib")
+#pragma comment(lib, "crypt32.lib")
 
 namespace hac { namespace reporting {
 
@@ -110,6 +116,29 @@ void Reporter::Impl::WorkerLoop()
     }
 }
 
+// Compute SHA-256 of the DER-encoded SubjectPublicKeyInfo of a cert.
+static std::string CertPubKeyHash(PCCERT_CONTEXT pCert)
+{
+    if (!pCert) return {};
+    // SubjectPublicKeyInfo begins at pbCertEncoded + tbsCertificate offset.
+    // Simplest portable approach: hash the SubjectPublicKeyInfo blob via
+    // CryptHashCertificate2 (Vista+).
+    DWORD hashLen = 32;
+    uint8_t hash[32] = {};
+    if (!CryptHashCertificate2(BCRYPT_SHA256_ALGORITHM, 0, nullptr,
+            pCert->pCertInfo->SubjectPublicKeyInfo.PublicKey.pbData,
+            pCert->pCertInfo->SubjectPublicKeyInfo.PublicKey.cbData,
+            hash, &hashLen))
+    {
+        // Fallback: SHA-256 the full DER cert if SPKI extraction fails.
+        crypto_hash_sha256(hash, pCert->pbCertEncoded, pCert->cbCertEncoded);
+    }
+    std::ostringstream ss;
+    for (int i = 0; i < 32; ++i)
+        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    return ss.str();
+}
+
 bool Reporter::Impl::SendBatch()
 {
     if (!queue || cfg.endpoint_url.empty()) return true;
@@ -151,6 +180,25 @@ bool Reporter::Impl::SendBatch()
         WinHttpCloseHandle(hConnect);
         WinHttpCloseHandle(hSession);
         return false;
+    }
+
+    // ── Certificate pinning ───────────────────────────────────────────────
+    if (secure && !cfg.cert_pin_sha256.empty()) {
+        PCCERT_CONTEXT pCert = nullptr;
+        DWORD certSz = sizeof(pCert);
+        WinHttpQueryOption(hReq, WINHTTP_OPTION_SERVER_CERT_CONTEXT, &pCert, &certSz);
+        if (pCert) {
+            std::string actual = CertPubKeyHash(pCert);
+            std::string expected = cfg.cert_pin_sha256;
+            std::transform(expected.begin(), expected.end(), expected.begin(), ::tolower);
+            CertFreeCertificateContext(pCert);
+            if (actual != expected) {
+                WinHttpCloseHandle(hReq);
+                WinHttpCloseHandle(hConnect);
+                WinHttpCloseHandle(hSession);
+                return false;  // Pin mismatch — do not send.
+            }
+        }
     }
 
     bool success = false;

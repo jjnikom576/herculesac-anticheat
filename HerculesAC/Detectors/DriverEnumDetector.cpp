@@ -33,21 +33,47 @@ struct RTL_PROCESS_MODULES {
 
 // Known bad driver file names (lower-case, no path).
 static const char* kBadDrivers[] = {
-    "dbk64.sys",               // Cheat Engine kernel driver
+    // ── Cheat Engine ────────────────────────────────────────────────────
+    "dbk64.sys",
     "dbk32.sys",
+
+    // ── Injectors ───────────────────────────────────────────────────────
     "gh-injector-x64.sys",
     "gh-injector-x86.sys",
-    "kdmapper.sys",            // IQVW64E.SYS via KDMapper
-    "iqvw64e.sys",
-    "capcom.sys",              // Capcom vulnerable driver
-    "procexp152.sys",          // Exploited Process Explorer driver
-    "kprocesshacker.sys",      // Process Hacker kernel driver
-    "winring0x64.sys",         // Exploited hardware driver
+    "kdmapper.sys",
+
+    // ── Exploited WHQL drivers (BYOVD) ──────────────────────────────────
+    "iqvw64e.sys",              // Intel Network Adapter (KDMapper)
+    "capcom.sys",               // Capcom (arbitrary kernel code exec)
+    "procexp152.sys",           // Sysinternals Process Explorer (old)
+    "procexp153.sys",
+    "kprocesshacker.sys",       // Process Hacker
+    "kprocesshacker2.sys",
+    "winring0x64.sys",          // OpenHardwareMonitor
     "winring0.sys",
-    "physmem.sys",
-    "gdrv.sys",                // Exploited Gigabyte driver
+    "physmem.sys",              // Physical memory access
+    "gdrv.sys",                 // Gigabyte (EasyAntiCheat bypass)
     "gdrv2.sys",
-    "rtcore64.sys",            // Exploited MSI Afterburner driver
+    "rtcore64.sys",             // MSI Afterburner
+    "aswarpot.sys",             // Avast (CVE-2020-9715 — used in BYOVD)
+    "aswvmm.sys",               // Avast
+    "nvoclock.sys",             // NVIDIA (CVE-2008-4611)
+    "speedfan.sys",             // SpeedFan hardware monitor
+    "sysdrv3s.sys",             // SYS3
+    "alsysio64.sys",            // AL Sys I/O
+    "atillk64.sys",             // ATI unlocked driver
+    "ene.sys",                  // ENE Tech (used in cheats)
+    "glckio2.sys",              // ASRock
+    "zam64.sys",                // Zemana AM (CVE-2021-31727)
+    "zamguard64.sys",
+    "pchunter64a.sys",          // PCHunter
+    "mhyprotect.sys",           // Mihoyo (used as bypass vector)
+    "hackintool.sys",
+    "lenovodiagnosticsdriver.sys", // Lenovo BYOVD
+    "hvack.sys",
+    "driverhive64.sys",
+    "blackbone.sys",            // BlackBone memory library
+    "mimidrv.sys",              // Mimikatz kernel driver
 };
 
 static std::string ToLower(const char* s)

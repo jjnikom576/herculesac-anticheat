@@ -145,6 +145,7 @@
     <ClCompile Include="..\Common\Logger\Logger.cpp" />
     <ClCompile Include="Globals.cpp" />
     <ClCompile Include="HookCallSet\functionSet.cpp" />
+    <ClCompile Include="Security\AntiDebug.cpp" />
     <ClCompile Include="Detectors\CodeSectionDetector.cpp" />
     <ClCompile Include="Detectors\DetectorScheduler.cpp" />
     <ClCompile Include="Detectors\DriverEnumDetector.cpp" />
@@ -170,6 +171,7 @@
     <ClInclude Include="..\Common\Logger\Logger.h" />
     <ClInclude Include="..\Common\vmp.h" />
     <ClInclude Include="..\Common\VMProtectSDK.h" />
+    <ClInclude Include="Security\AntiDebug.h" />
     <ClInclude Include="Detectors\CodeSectionDetector.h" />
     <ClInclude Include="Detectors\DetectorScheduler.h" />
     <ClInclude Include="Detectors\DriverEnumDetector.h" />

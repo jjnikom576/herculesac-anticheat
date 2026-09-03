@@ -1,4 +1,5 @@
 #include "WinMain.h"
+#include "Security/AntiDebug.h"
 #include "Detectors/DetectorScheduler.h"
 #include "Detectors/ProcessSigDetector.h"
 #include "Detectors/IATHookDetector.h"
@@ -14,13 +15,34 @@ static hac::detectors::DetectorScheduler g_scheduler;
 
 
 static const std::unordered_set<std::wstring> detectedProcessNames = {
-	L"ollydbg",
-	L"Dbgview",
-	L"x32dbg",
-	L"x64dbg",
-	L"cheatengine",
+	// Debuggers
+	L"ollydbg",      L"ollydbg.exe",
+	L"x32dbg",       L"x32dbg.exe",
+	L"x64dbg",       L"x64dbg.exe",
+	L"windbg",       L"windbg.exe",
+	L"idag",         L"idaq",         L"idaq64",
+	L"ida64.exe",    L"ida.exe",
+	L"radare2",      L"r2.exe",
+	L"cutter",
+	// Memory editors / injectors
+	L"cheatengine",  L"cheatengine-x86_64.exe",
+	L"gh-injector",
+	L"processhacker",L"processhacker.exe",
+	L"procexp",      L"procexp64.exe",
+	L"ksdumper",
+	// Packet editors / proxies
+	L"WPE.exe",      L"wpe pro.exe",
+	L"wireshark",    L"wireshark.exe",
+	L"fiddler",
+	// Misc tools
+	L"Dbgview",      L"dbgview64.exe",
 	L"Picker",
-	L"WPE.exe"
+	L"reclass.exe",  L"reclass64.exe",
+	L"dnspy.exe",
+	L"ilspy.exe",
+	L"dotpeek.exe",
+	L"autoit3.exe",  L"autoit3_x64.exe",
+	L"ahk.exe",      L"autohotkey.exe",
 };
 
 BOOL FindProgram(std::vector<std::wstring> files, std::wstring Program)
@@ -37,13 +59,25 @@ BOOL FindProgram(std::vector<std::wstring> files, std::wstring Program)
 
 
 static const std::vector<std::pair<std::wstring, std::wstring>> detectedWindowInfo = {
-	{ L"OLLYDBG", L"" },
-	{ L"Dbgview", L"" },
-	{ L"x32dbg", L"" },
-	{ L"x64dbg", L"" },
-	{ L"cheatengine", L"" },
-	{ L"Picker", L"" },
-	{ L"WPE.exe", L"" }
+	// { window_class, window_title }  — empty string = don't check that field
+	{ L"OLLYDBG",             L"" },
+	{ L"QWidget",             L"x64dbg" },
+	{ L"QWidget",             L"x32dbg" },
+	{ L"WinDbgFrameClass",    L"" },
+	{ L"idawindow",           L"" },
+	{ L"Afx:00400000:b",      L"" },      // OllyDbg variant
+	{ L"CheatEngineMainForm", L"" },
+	{ L"ProcessHacker",       L"" },
+	{ L"Wireshark",           L"" },
+	{ L"Fiddler",             L"" },
+	{ L"",                    L"Cheat Engine" },
+	{ L"",                    L"Process Hacker" },
+	{ L"",                    L"Process Monitor" },
+	{ L"",                    L"API Monitor" },
+	{ L"Picker",              L"" },
+	{ L"WPE.exe",             L"" },
+	{ L"Dbgview",             L"" },
+	{ L"ReClassEx",           L"" },
 };
 
 
@@ -346,12 +380,22 @@ void DetectHackIsRunning()
 
 void StartServer()
 {
+	int debugCheckTick = 0;
 	for (;;)
 	{
 		if (!CheckGameClientIsAlive())
-		{
 			break;
+
+		// Anti-debug check every ~30 s (every 6th 5-second tick).
+		if (++debugCheckTick >= 6) {
+			debugCheckTick = 0;
+			if (hac::security::IsDebuggerAttached()) {
+				ReportIllegalInfo("Debugger detected during runtime");
+				ExitGameProcess();
+				break;
+			}
 		}
+
 		DetectHackIsRunning();
 		Sleep(5000);
 	}
@@ -402,6 +446,7 @@ void InitProcess()
 
 void InitHerculesAC()
 {
+	hac::security::AssertNoDebugger();
 	InitFunctionPointer();
 	SetupHook();
 	InitCheckSum();

@@ -11,6 +11,9 @@ struct ReporterConfig {
     std::string  client_id;
     std::string  session_id;
     std::string  game_id;
+    // Optional HTTPS certificate pin: lowercase hex SHA-256 of the server leaf
+    // cert's DER-encoded SubjectPublicKeyInfo.  Empty = no pinning.
+    std::string  cert_pin_sha256;
 };
 
 class Reporter {
