@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HerculesAC Telemetry Dashboard</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --accent: #1f6feb; --green: #238636; --red: #da3633;
+  --yellow: #9e6a03; --text: #c9d1d9; --muted: #8b949e;
+  --crit: #f85149; --warn: #d29922; --info: #58a6ff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font: 14px/1.5 'Segoe UI', system-ui, sans-serif; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+header h1 { font-size: 18px; font-weight: 600; }
+.badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: var(--green); color: #fff; }
+.badge.offline { background: var(--red); }
+.toolbar { padding: 12px 20px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--surface); }
+.toolbar label { color: var(--muted); font-size: 12px; }
+select, input { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 13px; }
+button { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 5px 12px; font-size: 13px; cursor: pointer; }
+button.danger { background: var(--red); }
+button:hover { opacity: .85; }
+.stats { display: flex; gap: 12px; padding: 16px 20px; flex-wrap: wrap; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; min-width: 130px; }
+.stat-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.stat-card .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+.stat-card .value.crit { color: var(--crit); }
+.stat-card .value.warn { color: var(--warn); }
+.stat-card .value.info { color: var(--info); }
+#events-wrap { padding: 0 20px 20px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--surface); color: var(--muted); font-weight: 500; text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); position: sticky; top: 0; white-space: nowrap; }
+td { padding: 7px 10px; border-bottom: 1px solid #21262d; vertical-align: top; }
+tr:hover td { background: #1c2128; }
+.sev-Critical { color: var(--crit); font-weight: 600; }
+.sev-Warn     { color: var(--warn); font-weight: 600; }
+.sev-Info     { color: var(--info); }
+.kind-tag { background: #1f2937; border-radius: 4px; padding: 1px 6px; font-size: 11px; }
+.evidence { font-family: 'Consolas', monospace; font-size: 11px; color: var(--muted); white-space: pre-wrap; word-break: break-all; }
+.ts { color: var(--muted); white-space: nowrap; font-size: 12px; }
+#status-bar { padding: 6px 20px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); background: var(--surface); position: fixed; bottom: 0; width: 100%; }
+.empty { padding: 40px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>HerculesAC Telemetry</h1>
+  <span id="conn-badge" class="badge offline">Connecting…</span>
+</header>
+
+<div class="toolbar">
+  <label>Severity</label>
+  <select id="flt-sev">
+    <option value="">All</option>
+    <option value="3">Critical</option>
+    <option value="2">Warn</option>
+    <option value="1">Info</option>
+  </select>
+  <label>Kind</label>
+  <select id="flt-kind">
+    <option value="">All</option>
+    <option value="7">IatHook</option>
+    <option value="8">EatHook</option>
+    <option value="6">HookIntegrity</option>
+    <option value="9">CodeSectionDiverge</option>
+    <option value="10">ThreadInject</option>
+    <option value="11">KnownBadDriver</option>
+    <option value="1">ProcName</option>
+    <option value="2">WinName</option>
+    <option value="3">ModuleHash</option>
+  </select>
+  <label>Limit</label>
+  <select id="flt-limit">
+    <option value="50">50</option>
+    <option value="100" selected>100</option>
+    <option value="250">250</option>
+    <option value="500">500</option>
+  </select>
+  <button id="btn-refresh">Refresh</button>
+  <button class="danger" id="btn-clear">Clear All</button>
+  <label style="margin-left:auto">
+    <input type="checkbox" id="chk-live" checked> Auto-refresh (5s)
+  </label>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="label">Total Events</div><div class="value" id="st-total">–</div></div>
+  <div class="stat-card"><div class="label">Critical</div><div class="value crit" id="st-crit">–</div></div>
+  <div class="stat-card"><div class="label">Warning</div><div class="value warn" id="st-warn">–</div></div>
+  <div class="stat-card"><div class="label">Info</div><div class="value info" id="st-info">–</div></div>
+</div>
+
+<div id="events-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Time (received)</th>
+        <th>Severity</th>
+        <th>Kind</th>
+        <th>Client</th>
+        <th>Game</th>
+        <th>Detector</th>
+        <th>Evidence</th>
+      </tr>
+    </thead>
+    <tbody id="tbl-body"></tbody>
+  </table>
+  <div id="empty-msg" class="empty" hidden>No events found.</div>
+</div>
+<div id="status-bar">Last updated: –</div>
+
+<script>
+const API = '';
+let liveTimer = null;
+
+function ts(ms) {
+  const d = new Date(ms);
+  return d.toLocaleString('en-US', {
+    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  });
+}
+
+async function loadMetrics() {
+  try {
+    const r = await fetch(API + '/metrics');
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById('st-total').textContent = d.total_events ?? '–';
+    document.getElementById('st-crit').textContent = d.by_severity?.Critical ?? 0;
+    document.getElementById('st-warn').textContent = d.by_severity?.Warn ?? 0;
+    document.getElementById('st-info').textContent = d.by_severity?.Info ?? 0;
+    setConn(true);
+  } catch { setConn(false); }
+}
+
+async function loadEvents() {
+  const sev   = document.getElementById('flt-sev').value;
+  const kind  = document.getElementById('flt-kind').value;
+  const limit = document.getElementById('flt-limit').value;
+
+  let url = API + '/v1/events?limit=' + limit;
+  if (sev)  url += '&severity=' + sev;
+  if (kind) url += '&kind=' + kind;
+
+  try {
+    const r = await fetch(url);
+    if (!r.ok) { setConn(false); return; }
+    const events = await r.json();
+    setConn(true);
+    renderTable(events);
+    document.getElementById('status-bar').textContent =
+      'Last updated: ' + new Date().toLocaleTimeString() +
+      ' — ' + events.length + ' events shown';
+  } catch { setConn(false); }
+}
+
+function renderTable(events) {
+  const body = document.getElementById('tbl-body');
+  const empty = document.getElementById('empty-msg');
+  body.innerHTML = '';
+  if (!events.length) { empty.hidden = false; return; }
+  empty.hidden = true;
+  for (const e of events) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="ts">${ts(e.received_at)}</td>
+      <td class="sev-${e.severity}">${e.severity}</td>
+      <td><span class="kind-tag">${e.kind}</span></td>
+      <td>${escHtml(e.client_id || '–')}</td>
+      <td>${escHtml(e.game_id || '–')}</td>
+      <td>${escHtml(e.detector_ver || '–')}</td>
+      <td class="evidence">${escHtml(fmtJson(e.evidence))}</td>`;
+    body.appendChild(tr);
+  }
+}
+
+function fmtJson(s) {
+  if (!s) return '';
+  try { return JSON.stringify(JSON.parse(s), null, 2); }
+  catch { return s; }
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setConn(ok) {
+  const b = document.getElementById('conn-badge');
+  b.textContent = ok ? 'Live' : 'Offline';
+  b.className = 'badge' + (ok ? '' : ' offline');
+}
+
+async function refresh() {
+  await Promise.all([loadMetrics(), loadEvents()]);
+}
+
+function startLive() {
+  stopLive();
+  liveTimer = setInterval(refresh, 5000);
+}
+
+function stopLive() {
+  if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+}
+
+document.getElementById('btn-refresh').addEventListener('click', refresh);
+
+document.getElementById('btn-clear').addEventListener('click', async () => {
+  if (!confirm('Clear ALL events from the database?')) return;
+  await fetch(API + '/v1/events', { method: 'DELETE' });
+  await refresh();
+});
+
+document.getElementById('chk-live').addEventListener('change', e => {
+  e.target.checked ? startLive() : stopLive();
+});
+
+['flt-sev','flt-kind','flt-limit'].forEach(id =>
+  document.getElementById(id).addEventListener('change', loadEvents)
+);
+
+refresh();
+startLive();
+</script>
+</body>
+</html>
