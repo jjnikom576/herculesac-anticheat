@@ -28,6 +28,13 @@ x86/
 [Aa][Rr][Mm]64/
 bld/
 [Bb]in/
+
+# Vendor prebuilt binaries — override the x64/ x86/ build-output rules above.
+# libsodium and googletest prebuilt libs live under Common/include/ and must
+# be committed so CI can build without a separate download step.
+!Common/include/libsodium/lib/
+!Common/include/libsodium/lib/**
+!Common/include/googletest/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/

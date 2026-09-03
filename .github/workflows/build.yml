@@ -86,9 +86,13 @@ jobs:
       - name: Install WDK 10.0.26100
         shell: powershell
         run: |
-          $url = "https://go.microsoft.com/fwlink/?linkid=2294280"
           $out = "$env:TEMP\wdksetup.exe"
-          Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
+          # curl.exe follows redirects natively and handles Microsoft's CDN better
+          # than Invoke-WebRequest on Windows Server runners.
+          curl.exe -L --retry 3 --retry-delay 5 -o $out `
+            "https://go.microsoft.com/fwlink/?linkid=2294280"
+          $size = (Get-Item $out).Length
+          if ($size -lt 1MB) { throw "WDK download appears incomplete (${size} bytes)" }
           Start-Process -FilePath $out -ArgumentList "/q" -Wait
 
       - name: Add MSBuild to PATH
