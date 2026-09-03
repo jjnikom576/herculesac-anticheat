@@ -4,6 +4,7 @@
 #include <sstream>
 #include <filesystem>
 #include <json/json.h>
+#include <sodium.h>
 #include <Windows.h>
 
 namespace hac::manifest {
@@ -84,8 +85,22 @@ ManifestError Manifest::Load(const std::wstring& manifest_path) {
 	return ManifestError::Ok;
 }
 
-// VerifySignature and VerifyModule remain stubs — Tasks 5 and 6 fill them in.
-ManifestError Manifest::VerifySignature(const uint8_t (&)[32]) const { return ManifestError::Ok; }
-ManifestError Manifest::VerifyModule(const std::wstring&) const     { return ManifestError::Ok; }
+ManifestError Manifest::VerifySignature(const uint8_t (&public_key)[32]) const
+{
+	if (signature_.size() != crypto_sign_ed25519_BYTES) return ManifestError::SignatureInvalid;
+	if (raw_bytes_.empty())                              return ManifestError::SignatureInvalid;
+	if (sodium_init() < 0)                               return ManifestError::SignatureInvalid;
+	if (crypto_sign_ed25519_verify_detached(
+			signature_.data(),
+			raw_bytes_.data(), raw_bytes_.size(),
+			public_key) != 0)
+	{
+		return ManifestError::SignatureInvalid;
+	}
+	return ManifestError::Ok;
+}
+
+// VerifyModule remains a stub — Task 6 fills it in.
+ManifestError Manifest::VerifyModule(const std::wstring&) const { return ManifestError::Ok; }
 
 } // namespace hac::manifest
