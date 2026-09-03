@@ -31,6 +31,9 @@
     <ClInclude Include="Errors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicKey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\include\json\json_tool.h">
       <Filter>Header Files</Filter>
     </ClInclude>

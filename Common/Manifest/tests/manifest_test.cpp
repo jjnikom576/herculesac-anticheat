@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "../Manifest.h"
+#include "../PublicKey.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -113,4 +114,19 @@ TEST(ManifestVerifyModule, HashMismatchDetected) {
 	Manifest m;
 	ASSERT_EQ(m.Load(L"fixtures/hash_mismatch.manifest"), ManifestError::Ok);
 	EXPECT_EQ(m.VerifyModule(L"fixtures/module_a.bin"), ManifestError::ModuleHashMismatch);
+}
+
+TEST(PublicKey, IsThirtyTwoBytesAndNonZero) {
+	EXPECT_EQ(hac::manifest::kEmbeddedPublicKey.size(), 32u);
+	bool any_nonzero = false;
+	for (auto b : hac::manifest::kEmbeddedPublicKey) if (b != 0) any_nonzero = true;
+	EXPECT_TRUE(any_nonzero);
+}
+
+TEST(PublicKey, VerifiesTheFixtureManifest) {
+	Manifest m;
+	ASSERT_EQ(m.Load(L"fixtures/valid.manifest"), ManifestError::Ok);
+	uint8_t pk[32];
+	std::memcpy(pk, hac::manifest::kEmbeddedPublicKey.data(), 32);
+	EXPECT_EQ(m.VerifySignature(pk), ManifestError::Ok);
 }
