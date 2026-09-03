@@ -1,6 +1,7 @@
 #include "WinMain.h"
  
 Logger logger("hercules_log.txt");
+hac::reporting::Reporter g_reporter;
 
 
 static const std::unordered_set<std::wstring> detectedProcessNames = {
@@ -42,6 +43,13 @@ std::map<std::wstring, std::wstring> config;
 void ReportIllegalInfo(std::string sInfo)
 {
 	logger.Log(sInfo.c_str());
+
+	hac::reporting::AntiCheatEvent ev{};
+	ev.severity         = hac::reporting::Severity::Critical;
+	ev.kind             = hac::reporting::DetectionKind::ProcName;
+	ev.detector_version = "proc-name@1.0.0";
+	ev.evidence_json    = "{\"detail\":\"" + sInfo + "\"}";
+	g_reporter.Emit(std::move(ev));
 }
 
 namespace Global
@@ -189,6 +197,19 @@ void LoadConfig()
 	config[L"GameMon"] = g_manifest.Game().monitor_x86;
 	config[L"GameMon64"] = g_manifest.Game().monitor_x64;
 
+	// Configure the event reporter. Endpoint comes from manifest reporting field
+	// when present; empty string = queue-only mode (no HTTP sends).
+	{
+		hac::reporting::ReporterConfig rcfg;
+		WCHAR appdata[MAX_PATH] = {};
+		SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appdata);
+		rcfg.db_path = std::wstring(appdata) + L"\\HerculesAC\\queue.db";
+		CreateDirectoryW((std::wstring(appdata) + L"\\HerculesAC").c_str(), nullptr);
+		rcfg.game_id    = g_manifest.Game().id;
+		// endpoint_url, client_id, session_id: populated from manifest/runtime in future
+		g_reporter.Configure(rcfg);
+	}
+
 	VMProtectEnd();
 }
 
@@ -329,6 +350,7 @@ void StartServer()
 
 void UnInit()
 {
+	g_reporter.Flush(5000);
 	UnHook();
 }
 

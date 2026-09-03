@@ -111,7 +111,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Version.lib;Manifest.lib;libsodium.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Version.lib;Manifest.lib;libsodium.lib;winhttp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);..\bin\$(Platform)\$(Configuration)\;..\Common\include\libsodium\lib\$(PlatformShortName);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -179,6 +179,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Common\Manifest\Manifest.vcxproj">
       <Project>{7D304826-15E9-4CCE-A096-381638A12BA0}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Common\Reporting\Reporting.vcxproj">
+      <Project>{A3B1C2D4-E5F6-7890-ABCD-EF1234567890}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

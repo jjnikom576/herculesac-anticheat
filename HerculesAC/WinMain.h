@@ -6,6 +6,7 @@
 #include <DbgHelp.h>
 #include <psapi.h>
 #include <shlwapi.h>
+#include <shlobj.h>
 #include <string>
 #include <cstring>
 #include <TlHelp32.h>
@@ -36,7 +37,9 @@
 #include "Ioctl/DriverClient.h"
 #include "Inject/ProcessInjector.h"
 #include "Globals.h"
+#include "../Common/Reporting/Reporter.h"
 
+extern hac::reporting::Reporter g_reporter;
 
 using UInt = unsigned int;
 
