@@ -110,6 +110,7 @@
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="Globals.cpp" />
     <ClCompile Include="Protect\Callback\Callbacks.cpp" />
+    <ClCompile Include="Protect\PidTable.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\Ring0\Common.h" />
@@ -123,6 +124,7 @@
     <ClInclude Include="Driver.h" />
     <ClInclude Include="Globals.h" />
     <ClInclude Include="Protect\Callback\Callbacks.h" />
+    <ClInclude Include="Protect\PidTable.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
