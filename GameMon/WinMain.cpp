@@ -82,13 +82,6 @@ void StartServer()
 	}
 }
 
-// The specified program was not found
-void NoProgramFound(std::wstring sText)
-{
-	::MessageBox(NULL, sText.c_str(), _T("HAC Warning:"), MB_ICONWARNING | MB_SYSTEMMODAL);
-	exit(0);
-}
-
 BOOL FindProgram(std::vector<std::wstring> files, std::wstring Program)
 {
 	for (const auto& file : files)
@@ -101,30 +94,35 @@ BOOL FindProgram(std::vector<std::wstring> files, std::wstring Program)
 	return FALSE;
 }
 
+static hac::manifest::Manifest g_manifest;
+
+static void FailAndExit(const wchar_t* reason)
+{
+	logger.Log((std::string("Manifest error: ") + Common::wideStringToString(reason)).c_str());
+	::MessageBox(NULL, reason, _T("HAC Warning:"), MB_ICONWARNING | MB_SYSTEMMODAL);
+	ExitProcess(1);
+}
+
 void LoadConfig()
 {
 	VMProtectionScope vmpScope;
-	// Traverse the game client directory
-	std::vector<std::wstring> GameDir = FileSystem::TraverseDirectory(Global::wsGamePath);
 
-	std::wstring filename = FileSystem::GetModuleDirectory(NULL) + _T("hac.dat");
-	logger.outDebug(_T("File path: %s"), filename.c_str());
+	std::wstring root = FileSystem::GetModuleDirectory(NULL);
+	std::wstring manifest_path = root + L"hac.manifest";
 
-	config[L"Client"] = FileSystem::ReadIniValue(filename, L"Game", L"Client");
-
-	if (config[L"Client"].empty())
+	if (g_manifest.Load(manifest_path) != hac::manifest::ManifestError::Ok)
 	{
-		goto NoFound;
+		FailAndExit(L"hac.manifest is missing or malformed.");
 	}
 
-	if (!FindProgram(GameDir, config[L"Client"]))
+	uint8_t pk[32];
+	std::memcpy(pk, hac::manifest::kEmbeddedPublicKey.data(), 32);
+	if (g_manifest.VerifySignature(pk) != hac::manifest::ManifestError::Ok)
 	{
-		goto NoFound;
+		FailAndExit(L"hac.manifest signature is invalid.");
 	}
-	return;
 
-NoFound:
-	NoProgramFound(_T("The file is corrupted, please reinstall the game!"));
+	config[L"Client"] = g_manifest.Game().client;
 }
 
 // Reclaim memory resources

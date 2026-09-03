@@ -27,6 +27,8 @@
 #include "../Common/Hash/Crc32.h"
 #include "../Common/IPC/SharedMemory/SharedMemory.h"
 #include "../Common/include/json/json.h"
+#include "../Common/Manifest/Manifest.h"
+#include "../Common/Manifest/PublicKey.h"
 
 using UInt = unsigned int;
 
