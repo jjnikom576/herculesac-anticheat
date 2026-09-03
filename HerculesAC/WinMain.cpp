@@ -342,8 +342,17 @@ void InitProcess()
 	{
 		pi = StartProcess(Global::GamePath, config[L"starter"], L"");
 
-		if (pi.dwProcessId != 0)
+		if (pi.dwProcessId != 0) {
 			hac::driver::StartProtect(pi.dwProcessId);
+
+			std::wstring modDir = FileSystem::GetModuleDirectory(NULL);
+#ifdef _WIN64
+			std::wstring dllPath = modDir + L"GameProtect64.dll";
+#else
+			std::wstring dllPath = modDir + L"GameProtect.dll";
+#endif
+			hac::inject::InjectDll(pi.dwProcessId, dllPath.c_str());
+		}
 
 		Json::Value root;
 		root["GamePath"] = Common::wideStringToString(Global::GamePath);

@@ -34,6 +34,7 @@
 #include "../Common/include/List/vectorExt.h"
 #include "Threads/ActiveThread.h"
 #include "Ioctl/DriverClient.h"
+#include "Inject/ProcessInjector.h"
 #include "Globals.h"
 
 

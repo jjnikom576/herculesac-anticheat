@@ -3,7 +3,6 @@
 #include "Hook/DetoursHook/HookCallSet/functionSet.h"
 #include "Globals.h"
 #include <sodium.h>
-#include <fstream>
 
 Logger logger;
 
@@ -68,49 +67,6 @@ void CleanupSharedMemory()
     g_sharedMemory = nullptr;
 }
 
-BOOL IsWhitelistCurrentProcess()
-{
-	if (g_manifest.WhitelistSha256().empty()) return FALSE;
-
-	TCHAR szFileName[MAX_PATH] = {};
-	GetModuleFileName(NULL, szFileName, MAX_PATH);
-
-	// Hash the current process image with SHA-256 via libsodium.
-	std::ifstream f(szFileName, std::ios::binary);
-	if (!f) return FALSE;
-	crypto_hash_sha256_state st;
-	crypto_hash_sha256_init(&st);
-	std::vector<uint8_t> buf(64 * 1024);
-	while (f)
-	{
-		f.read(reinterpret_cast<char*>(buf.data()), buf.size());
-		auto got = static_cast<size_t>(f.gcount());
-		if (got == 0) break;
-		crypto_hash_sha256_update(&st, buf.data(), got);
-	}
-	uint8_t h[crypto_hash_sha256_BYTES];
-	crypto_hash_sha256_final(&st, h);
-
-	static const char* d = "0123456789abcdef";
-	std::string hex;
-	hex.reserve(64);
-	for (auto b : h)
-	{
-		hex.push_back(d[b >> 4]);
-		hex.push_back(d[b & 0xF]);
-	}
-
-	for (const auto& allowed : g_manifest.WhitelistSha256())
-	{
-		if (allowed == hex)
-		{
-			logger.outDebug(_T("Whitelist match (%s); skipping hooks"), szFileName);
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
 void SetupHook()
 {
     Hook_ReadProcessMemory();
@@ -147,10 +103,8 @@ void LoadConfig(HINSTANCE hinstDLL)
 
 void InitHook()
 {
-    if (!IsWhitelistCurrentProcess())
-    {
-         SetupHook();
-    }
+    // M3: targeted injection — GameProtect only loads in the game process.
+    SetupHook();
 }
 
 void Init(HINSTANCE hinstDLL)
