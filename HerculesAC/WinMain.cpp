@@ -1,7 +1,16 @@
 #include "WinMain.h"
- 
+#include "Detectors/DetectorScheduler.h"
+#include "Detectors/ProcessSigDetector.h"
+#include "Detectors/IATHookDetector.h"
+#include "Detectors/EATHookDetector.h"
+#include "Detectors/PrologueDetector.h"
+#include "Detectors/CodeSectionDetector.h"
+#include "Detectors/ThreadInjectDetector.h"
+#include "Detectors/DriverEnumDetector.h"
+
 Logger logger("hercules_log.txt");
 hac::reporting::Reporter g_reporter;
+static hac::detectors::DetectorScheduler g_scheduler;
 
 
 static const std::unordered_set<std::wstring> detectedProcessNames = {
@@ -350,6 +359,7 @@ void StartServer()
 
 void UnInit()
 {
+	g_scheduler.Stop();
 	g_reporter.Flush(5000);
 	UnHook();
 }
@@ -398,6 +408,15 @@ void InitHerculesAC()
 	InitThread();
 	InitProcess();
 
+	// M5: plug-in detectors
+	g_scheduler.Add(std::make_unique<hac::detectors::ProcessSigDetector>(std::vector<std::string>{}));
+	g_scheduler.Add(std::make_unique<hac::detectors::IATHookDetector>());
+	g_scheduler.Add(std::make_unique<hac::detectors::EATHookDetector>());
+	g_scheduler.Add(std::make_unique<hac::detectors::PrologueDetector>());
+	g_scheduler.Add(std::make_unique<hac::detectors::CodeSectionDetector>());
+	g_scheduler.Add(std::make_unique<hac::detectors::ThreadInjectDetector>());
+	g_scheduler.Add(std::make_unique<hac::detectors::DriverEnumDetector>());
+	g_scheduler.Start(g_reporter);
 }
 
 //Define the window procedure
