@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\HookCallSet">
+      <UniqueIdentifier>{5928a294-45ce-477e-a3c8-455c9cc4071e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\HookCallSet">
+      <UniqueIdentifier>{d7bcebfd-673d-4db9-b2e1-6c1a77bd7b6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Hook">
+      <UniqueIdentifier>{7e5d6dcc-2da9-48b4-b09d-75ed7cee8f29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Hook">
+      <UniqueIdentifier>{eb304bf0-f5b1-491b-ae62-d236d69fbe56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Asm">
+      <UniqueIdentifier>{a6759043-75c5-4250-8da5-5e749a5638e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Asm">
+      <UniqueIdentifier>{2937525b-0c6b-42ca-9223-8e49a6bf0edd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HookCallSet\functionSet.cpp">
+      <Filter>Source Files\HookCallSet</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Detours\Hook.cpp">
+      <Filter>Source Files\Hook</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dllmain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HookCallSet\functionSet.h">
+      <Filter>Header Files\HookCallSet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Detours\Hook.h">
+      <Filter>Header Files\Hook</Filter>
+    </ClInclude>
+    <ClInclude Include="Asm\AsmCallset.h">
+      <Filter>Header Files\Asm</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="Asm\AsmCallset.asm">
+      <Filter>Source Files\Asm</Filter>
+    </MASM>
+  </ItemGroup>
+</Project>

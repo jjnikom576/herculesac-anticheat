@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Common">
+      <UniqueIdentifier>{3519e73a-742d-41ce-b42b-0e654d279fbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\FileSystem">
+      <UniqueIdentifier>{801603e6-c824-4cfb-bf76-4cdfa5dee420}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Logger">
+      <UniqueIdentifier>{f227fccd-62df-47c9-976a-ab06469bb6c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Hash">
+      <UniqueIdentifier>{37e2420f-cf29-4435-acca-a89be5cf03dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\IPC">
+      <UniqueIdentifier>{fe8f0d6f-01d9-4501-9158-d936f49ccd12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\IPC\SharedMemory">
+      <UniqueIdentifier>{4c8f81be-0904-43ac-ae63-c34240a841b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\include">
+      <UniqueIdentifier>{893af996-f2c3-421f-9036-b86202c0bdb3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\include\json">
+      <UniqueIdentifier>{eb8374bc-cb6a-4629-a934-10a51f19ff4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common">
+      <UniqueIdentifier>{bd11494d-7a64-4acc-82b0-ce4df0c15ef4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\FileSystem">
+      <UniqueIdentifier>{94fe49a9-3e5a-49c5-8f4e-2c7966ec03f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Logger">
+      <UniqueIdentifier>{a3aec9f5-06d1-42bf-8e9d-feb54a178e9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Hash">
+      <UniqueIdentifier>{15983bce-74eb-4457-bb2d-d222b8221ee3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\IPC">
+      <UniqueIdentifier>{fed0eaab-9911-4ba9-b66b-24e84704a98e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\IPC\SharedMemory">
+      <UniqueIdentifier>{8ad62958-f9a2-4a62-9839-053a0f9a70e6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="WinMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Common.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\FileSystem\FileSystem.cpp">
+      <Filter>Source Files\Common\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Logger\Logger.cpp">
+      <Filter>Source Files\Common\Logger</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Hash\Crc32.cpp">
+      <Filter>Source Files\Common\Hash</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\IPC\SharedMemory\SharedMemory.cpp">
+      <Filter>Source Files\Common\IPC\SharedMemory</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="WinMain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\vmp.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\VMProtectSDK.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Common.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\FileSystem\FileSystem.h">
+      <Filter>Header Files\Common\FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Logger\Logger.h">
+      <Filter>Header Files\Common\Logger</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Hash\Crc32.h">
+      <Filter>Header Files\Common\Hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\IPC\SharedMemory\SharedMemory.h">
+      <Filter>Header Files\Common\IPC\SharedMemory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\include\json\json.h">
+      <Filter>Header Files\Common\include\json</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

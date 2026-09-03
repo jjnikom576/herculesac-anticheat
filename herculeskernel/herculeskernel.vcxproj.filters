@@ -1,0 +1,139 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Driver Files">
+      <UniqueIdentifier>{8E41214B-6785-4CFE-B992-037D68949A14}</UniqueIdentifier>
+      <Extensions>inf;inv;inx;mof;mc;</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Protect">
+      <UniqueIdentifier>{524c1092-391b-4891-a0c4-d042cfb3f536}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Protect\Callback">
+      <UniqueIdentifier>{4feacd32-f1b9-4718-b40e-2416a0719044}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protect">
+      <UniqueIdentifier>{b9218b53-f947-4e1f-940c-6a180c2c472b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Protect\Callback">
+      <UniqueIdentifier>{16f57b5e-c2d4-4ba8-a704-51a4fe8f42fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common">
+      <UniqueIdentifier>{f7eaa7f9-76d0-473d-91e4-a908c1d9a2e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common">
+      <UniqueIdentifier>{d93ad8bc-6432-44e0-b417-175a048b3f45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Shared">
+      <UniqueIdentifier>{88f5a237-f365-4fbb-b120-ac61af85cf43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Ring0">
+      <UniqueIdentifier>{c86cb6f4-70c1-41e1-b6da-89802622578e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Ring0\List">
+      <UniqueIdentifier>{7481c278-b491-448e-a850-271791998977}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Ring0\Memory">
+      <UniqueIdentifier>{97c120af-cd94-4108-95c9-e0b721ef43a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Ring0\String">
+      <UniqueIdentifier>{3eecf708-fea6-4648-8e54-0bbc4b90cc45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Ring0\ia32-doc">
+      <UniqueIdentifier>{fc61751b-6d06-4055-873f-14e0c6e97537}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Ring0\ia32-doc\out">
+      <UniqueIdentifier>{fc6d86c2-3954-4038-b05e-f58aec385aee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Ring0">
+      <UniqueIdentifier>{5fcc15ee-5e9a-4d34-aacd-4612e7a6d8b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Ring0\String">
+      <UniqueIdentifier>{cfdd3b79-7ecb-42fb-8a3b-606c695a0fc3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Ring0\List">
+      <UniqueIdentifier>{205bc09f-db5a-4712-b527-f05b47850595}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Ring0\Encrypt">
+      <UniqueIdentifier>{9c283026-6137-4e88-95bb-a09136dba0f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Ring0\Encrypt\Blowfish">
+      <UniqueIdentifier>{8a641d33-40fb-4b47-ab5e-6178d654e67a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Ring0\Encrypt">
+      <UniqueIdentifier>{70de6662-bdc1-4d57-95ea-54e202dfdab9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Ring0\Encrypt\Blowfish">
+      <UniqueIdentifier>{46cb00fb-b1a9-474d-8c0d-8ea4bff43f9d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Driver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Protect\Callback\Callbacks.cpp">
+      <Filter>Source Files\Protect\Callback</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Ring0\List\MyList.cpp">
+      <Filter>Source Files\Common\Ring0\List</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Ring0\String\StringHandler.cpp">
+      <Filter>Source Files\Common\Ring0\String</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Ring0\Common.cpp">
+      <Filter>Source Files\Common\Ring0</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Ring0\Encrypt\Blowfish\Blowfish.cpp">
+      <Filter>Source Files\Common\Ring0\Encrypt\Blowfish</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Driver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Protect\Callback\Callbacks.h">
+      <Filter>Header Files\Protect\Callback</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Ring0\List\MyList.h">
+      <Filter>Header Files\Common\Ring0\List</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Ring0\String\StringHandler.h">
+      <Filter>Header Files\Common\Ring0\String</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Ring0\Memory\AllocateMem.h">
+      <Filter>Header Files\Common\Ring0\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Shared\IOCTLs.h">
+      <Filter>Header Files\Common\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Shared\SharedStruct.h">
+      <Filter>Header Files\Common\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Ring0\ia32-doc\out\ia32.h">
+      <Filter>Header Files\Common\Ring0\ia32-doc\out</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Ring0\Common.h">
+      <Filter>Header Files\Common\Ring0</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Ring0\Encrypt\Blowfish\Blowfish.h">
+      <Filter>Header Files\Common\Ring0\Encrypt\Blowfish</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

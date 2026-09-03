@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Common">
+      <UniqueIdentifier>{febdf25a-d11d-45e3-a583-2f837aac37fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common">
+      <UniqueIdentifier>{81ff006c-c3ca-4311-9dac-8da5b0e65848}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\FileSystem">
+      <UniqueIdentifier>{adece1f4-bb17-4b4d-90cd-e8d93b6a27e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\FileSystem">
+      <UniqueIdentifier>{cd3af1f4-3278-42fe-9054-0242efca28b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Logger">
+      <UniqueIdentifier>{6724eb47-397f-485a-9e5a-27256f8a764f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Logger">
+      <UniqueIdentifier>{83ee0059-a4ad-410f-a305-5541819fea2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Hash">
+      <UniqueIdentifier>{a7ee0cc3-598d-4499-b7aa-3971925b7508}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Hash">
+      <UniqueIdentifier>{f30c6e06-18ac-4c9b-83a5-19ebc6e228da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Threads">
+      <UniqueIdentifier>{248012c2-22a2-4b34-ba81-d56aa4c3b1cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Threads">
+      <UniqueIdentifier>{23129bc4-57d4-410c-9efa-b449092cc577}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\HookCallSet">
+      <UniqueIdentifier>{5965b8e0-1927-4079-bfd0-c74addb5ff9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\HookCallSet">
+      <UniqueIdentifier>{b2b4e533-02db-4eba-9906-2f61dc1ec1f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Detours">
+      <UniqueIdentifier>{a2badfd1-2b8a-4222-97a2-5aba99a0c6eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Detours">
+      <UniqueIdentifier>{4c9f8d56-2c67-4882-ad65-a85292a69b8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\include">
+      <UniqueIdentifier>{e44b25a2-2f94-4364-9b82-7e2068595e35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\include\json">
+      <UniqueIdentifier>{ad833144-5a66-4424-9933-2ab0b981a95b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\include\List">
+      <UniqueIdentifier>{ceb84567-303f-477c-b552-24033de643bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Common\Hash\MD5">
+      <UniqueIdentifier>{06a02916-bef2-4a42-9874-6178acb12a2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common\Hash\MD5">
+      <UniqueIdentifier>{3554eb77-c20d-45ab-858b-f00452b5d864}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="WinMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\FileSystem\FileSystem.cpp">
+      <Filter>Source Files\Common\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Logger\Logger.cpp">
+      <Filter>Source Files\Common\Logger</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Common.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Hash\Crc32.cpp">
+      <Filter>Source Files\Common\Hash</Filter>
+    </ClCompile>
+    <ClCompile Include="Threads\ActiveThread.cpp">
+      <Filter>Source Files\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Detours\Hook.cpp">
+      <Filter>Source Files\Common\Detours</Filter>
+    </ClCompile>
+    <ClCompile Include="Globals.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HookCallSet\functionSet.cpp">
+      <Filter>Source Files\HookCallSet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Hash\MD5\MD5.cpp">
+      <Filter>Source Files\Common\Hash\MD5</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="WinMain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\FileSystem\FileSystem.h">
+      <Filter>Header Files\Common\FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Logger\Logger.h">
+      <Filter>Header Files\Common\Logger</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Common.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\VMProtectSDK.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Hash\Crc32.h">
+      <Filter>Header Files\Common\Hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\vmp.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Threads\ActiveThread.h">
+      <Filter>Header Files\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Detours\detours.h">
+      <Filter>Header Files\Common\Detours</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Detours\Hook.h">
+      <Filter>Header Files\Common\Detours</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HookCallSet\functionSet.h">
+      <Filter>Header Files\HookCallSet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\include\json\json.h">
+      <Filter>Header Files\Common\include\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\include\List\vectorExt.h">
+      <Filter>Header Files\Common\include\List</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Hash\MD5\MD5.h">
+      <Filter>Header Files\Common\Hash\MD5</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="HerculesAC.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\spartan.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
