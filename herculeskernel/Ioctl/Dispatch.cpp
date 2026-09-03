@@ -74,18 +74,49 @@ NTSTATUS DispatchDeviceControl(_In_ PDEVICE_OBJECT, _Inout_ PIRP Irp)
     ULONG_PTR info = 0;
 
     switch (stack->Parameters.DeviceIoControl.IoControlCode) {
-    case IOCTL_START_PROTECT:
-        // Task 5 fills in
-        status = STATUS_NOT_IMPLEMENTED;
+    case IOCTL_START_PROTECT: {
+        LUID debugPriv = RtlConvertLongToLuid(SE_DEBUG_PRIVILEGE);
+        if (!SeSinglePrivilegeCheck(debugPriv, UserMode)) {
+            status = STATUS_ACCESS_DENIED;
+            break;
+        }
+        if (stack->Parameters.DeviceIoControl.InputBufferLength < sizeof(IOCTL_START_PROTECT_REQUEST)) {
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+        PIOCTL_START_PROTECT_REQUEST req =
+            static_cast<PIOCTL_START_PROTECT_REQUEST>(Irp->AssociatedIrp.SystemBuffer);
+        status = g_pidTable.Insert(req->pid);
         break;
-    case IOCTL_STOP_PROTECT:
-        // Task 6 fills in
-        status = STATUS_NOT_IMPLEMENTED;
+    }
+    case IOCTL_STOP_PROTECT: {
+        LUID debugPriv = RtlConvertLongToLuid(SE_DEBUG_PRIVILEGE);
+        if (!SeSinglePrivilegeCheck(debugPriv, UserMode)) {
+            status = STATUS_ACCESS_DENIED;
+            break;
+        }
+        if (stack->Parameters.DeviceIoControl.InputBufferLength < sizeof(IOCTL_STOP_PROTECT_REQUEST)) {
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+        PIOCTL_STOP_PROTECT_REQUEST req =
+            static_cast<PIOCTL_STOP_PROTECT_REQUEST>(Irp->AssociatedIrp.SystemBuffer);
+        status = g_pidTable.Remove(req->pid);
         break;
-    case IOCTL_QUERY_STATUS:
-        // Task 7 fills in
-        status = STATUS_NOT_IMPLEMENTED;
+    }
+    case IOCTL_QUERY_STATUS: {
+        if (stack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(IOCTL_QUERY_STATUS_RESPONSE)) {
+            status = STATUS_BUFFER_TOO_SMALL;
+            break;
+        }
+        PIOCTL_QUERY_STATUS_RESPONSE resp =
+            static_cast<PIOCTL_QUERY_STATUS_RESPONSE>(Irp->AssociatedIrp.SystemBuffer);
+        resp->active_protection_count = g_pidTable.Count();
+        resp->driver_version          = 0x00020000;
+        info   = sizeof(IOCTL_QUERY_STATUS_RESPONSE);
+        status = STATUS_SUCCESS;
         break;
+    }
     default:
         status = STATUS_INVALID_DEVICE_REQUEST;
         break;
