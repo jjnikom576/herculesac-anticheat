@@ -42,6 +42,20 @@ static bool AddressInAnyModule(uintptr_t addr)
     return false;
 }
 
+// Returns true if the address lives in MEM_PRIVATE memory with executable permission.
+// Reflectively-loaded DLLs appear to be in a "module" range but their backing
+// pages are MEM_PRIVATE (not MEM_IMAGE), which exposes the technique.
+static bool IsPrivateExecutable(uintptr_t addr)
+{
+    if (!addr) return false;
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (!VirtualQuery((LPCVOID)addr, &mbi, sizeof(mbi))) return false;
+    if (mbi.Type != MEM_PRIVATE) return false;
+    const DWORD execMask = PAGE_EXECUTE | PAGE_EXECUTE_READ |
+                           PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
+    return (mbi.Protect & execMask) != 0;
+}
+
 namespace hac { namespace detectors {
 
 std::string_view ThreadInjectDetector::Name() const noexcept { return "thread-inject"; }
@@ -74,16 +88,21 @@ void ThreadInjectDetector::Poll(hac::reporting::Reporter& out)
         uintptr_t startAddr = GetThreadStartAddress(hThread);
         CloseHandle(hThread);
 
-        if (startAddr && !AddressInAnyModule(startAddr)) {
+        bool suspectNoModule  = startAddr && !AddressInAnyModule(startAddr);
+        bool suspectPrivateEx = startAddr && IsPrivateExecutable(startAddr);
+        if (suspectNoModule || suspectPrivateEx) {
             char hexAddr[32];
             snprintf(hexAddr, sizeof(hexAddr), "%016llX", (unsigned long long)startAddr);
 
             hac::reporting::AntiCheatEvent ev{};
             ev.severity         = hac::reporting::Severity::Critical;
             ev.kind             = Kind();
-            ev.detector_version = "thread-inject@1.0.0";
+            ev.detector_version = "thread-inject@1.1.0";
             ev.evidence_json    = "{\"tid\":" + std::to_string(tid)
-                                + ",\"start_va\":\"" + hexAddr + "\"}";
+                                + ",\"start_va\":\"" + hexAddr
+                                + "\",\"no_module\":" + (suspectNoModule  ? "true" : "false")
+                                + ",\"private_exec\":" + (suspectPrivateEx ? "true" : "false")
+                                + "}";
             out.Emit(std::move(ev));
         }
     } while (Thread32Next(snap, &te));

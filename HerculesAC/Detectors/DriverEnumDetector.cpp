@@ -89,7 +89,7 @@ std::string_view DriverEnumDetector::Name() const noexcept { return "driver-enum
 hac::reporting::DetectionKind DriverEnumDetector::Kind() const noexcept
 { return hac::reporting::DetectionKind::KnownBadDriver; }
 std::chrono::milliseconds DriverEnumDetector::Interval() const noexcept
-{ return std::chrono::seconds(60); }
+{ return std::chrono::seconds(15); }
 
 void DriverEnumDetector::Poll(hac::reporting::Reporter& out)
 {

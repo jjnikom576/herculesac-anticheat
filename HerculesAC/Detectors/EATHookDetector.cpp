@@ -20,7 +20,7 @@ std::string_view EATHookDetector::Name() const noexcept { return "eat-hook"; }
 hac::reporting::DetectionKind EATHookDetector::Kind() const noexcept
 { return hac::reporting::DetectionKind::EatHook; }
 std::chrono::milliseconds EATHookDetector::Interval() const noexcept
-{ return std::chrono::seconds(30); }
+{ return std::chrono::seconds(10); }
 
 void EATHookDetector::Poll(hac::reporting::Reporter& out)
 {

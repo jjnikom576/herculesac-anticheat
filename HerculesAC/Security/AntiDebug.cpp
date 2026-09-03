@@ -98,19 +98,35 @@ static bool Check_ExceptionHijack()
     return !ok;
 }
 
+static bool Check_HardwareBreakpoints()
+{
+    // Read the debug registers of the current thread via GetThreadContext.
+    // DR0-DR3 hold hardware breakpoint addresses; DR7 is the control word.
+    // Any non-zero DR0-DR3 paired with DR7 != 0 indicates an active hardware BP.
+    CONTEXT ctx{};
+    ctx.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+    if (!GetThreadContext(GetCurrentThread(), &ctx))
+        return false;
+    // DR7 low bit enables local breakpoints; bits 1,3,5,7 enable DR0-DR3.
+    if (ctx.Dr7 != 0 && (ctx.Dr0 || ctx.Dr1 || ctx.Dr2 || ctx.Dr3))
+        return true;
+    return false;
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 
 namespace hac { namespace security {
 
 bool IsDebuggerAttached()
 {
-    if (Check_IsDebuggerPresent())  return true;
-    if (Check_RemoteDebugger())     return true;
-    if (Check_DebugPort())          return true;
-    if (Check_NtGlobalFlag())       return true;
-    if (Check_HeapFlags())          return true;
-    if (Check_Timing())             return true;
-    if (Check_ExceptionHijack())    return true;
+    if (Check_IsDebuggerPresent())    return true;
+    if (Check_RemoteDebugger())       return true;
+    if (Check_DebugPort())            return true;
+    if (Check_NtGlobalFlag())         return true;
+    if (Check_HeapFlags())            return true;
+    if (Check_Timing())               return true;
+    if (Check_ExceptionHijack())      return true;
+    if (Check_HardwareBreakpoints())  return true;
     return false;
 }
 

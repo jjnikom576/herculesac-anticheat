@@ -40,17 +40,25 @@ static bool FindTextSection(uintptr_t& outBase, size_t& outSize)
     return false;
 }
 
+// Capture baseline immediately at construction — before the first Poll tick —
+// so a cheat that injects before the 10-second first poll cannot set a poisoned baseline.
+CodeSectionDetector::CodeSectionDetector()
+{
+    if (FindTextSection(m_textBase, m_textSize)) {
+        m_baselineHex = Sha256Hex((const BYTE*)m_textBase, m_textSize);
+        m_baselineSet = true;
+    }
+}
+
 std::string_view CodeSectionDetector::Name() const noexcept { return "code-section"; }
 hac::reporting::DetectionKind CodeSectionDetector::Kind() const noexcept
 { return hac::reporting::DetectionKind::CodeSectionDiverge; }
 std::chrono::milliseconds CodeSectionDetector::Interval() const noexcept
-{ return std::chrono::seconds(30); }
+{ return std::chrono::seconds(10); }
 
 void CodeSectionDetector::Poll(hac::reporting::Reporter& out)
 {
-    if (!m_textBase || !m_textSize) {
-        if (!FindTextSection(m_textBase, m_textSize)) return;
-    }
+    if (!m_textBase || !m_textSize) return;
 
     std::string current = Sha256Hex((const BYTE*)m_textBase, m_textSize);
 

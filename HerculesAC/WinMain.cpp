@@ -1,5 +1,8 @@
 #include "WinMain.h"
 #include "Security/AntiDebug.h"
+#include <winver.h>
+#include <cwctype>
+#pragma comment(lib, "version.lib")
 #include "Detectors/DetectorScheduler.h"
 #include "Detectors/ProcessSigDetector.h"
 #include "Detectors/IATHookDetector.h"
@@ -55,6 +58,50 @@ BOOL FindProgram(std::vector<std::wstring> files, std::wstring Program)
 		}
 	}
 	return FALSE;
+}
+
+// Returns the OriginalFilename field from a process's VERSIONINFO resource.
+// This catches renamed binaries (e.g. cheatengine renamed to svchost.exe).
+static std::wstring GetProcessOriginalFilename(DWORD pid)
+{
+	WCHAR imagePath[MAX_PATH] = {};
+	HANDLE hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+	if (!hProc) return {};
+
+	DWORD len = MAX_PATH;
+	if (!QueryFullProcessImageNameW(hProc, 0, imagePath, &len)) {
+		CloseHandle(hProc);
+		return {};
+	}
+	CloseHandle(hProc);
+
+	DWORD dummy = 0;
+	DWORD infoSize = GetFileVersionInfoSizeW(imagePath, &dummy);
+	if (!infoSize) return {};
+
+	std::vector<BYTE> buf(infoSize);
+	if (!GetFileVersionInfoW(imagePath, 0, infoSize, buf.data())) return {};
+
+	struct LANGCP { WORD lang; WORD cp; };
+	LANGCP* langcp = nullptr;
+	UINT lcLen = 0;
+	if (!VerQueryValueW(buf.data(), L"\\VarFileInfo\\Translation",
+		(LPVOID*)&langcp, &lcLen) || !lcLen)
+		return {};
+
+	WCHAR subBlock[64];
+	swprintf_s(subBlock, L"\\StringFileInfo\\%04x%04x\\OriginalFilename",
+		langcp->lang, langcp->cp);
+
+	WCHAR* origName = nullptr;
+	UINT origLen = 0;
+	if (!VerQueryValueW(buf.data(), subBlock, (LPVOID*)&origName, &origLen) || !origLen)
+		return {};
+
+	std::wstring result(origName);
+	// Lowercase for comparison
+	std::transform(result.begin(), result.end(), result.begin(), ::towlower);
+	return result;
 }
 
 
@@ -302,17 +349,34 @@ void CheckProcessNames()
 		return;
 	}
 
-	if (std::any_of(detectedProcessNames.begin(), detectedProcessNames.end(), [](const auto& name) {
-		if (Common::IsProcessRunning(name.c_str()))
-		{
-			ReportIllegalInfo("Found hack tools: " + Common::wideStringToString(name));
-			return true;
-		}
-		else
-		{
+	// Check by process name (fast path)
+	bool foundByName = std::any_of(detectedProcessNames.begin(), detectedProcessNames.end(),
+		[](const auto& name) {
+			if (Common::IsProcessRunning(name.c_str())) {
+				ReportIllegalInfo("Found hack tools (name): " + Common::wideStringToString(name));
+				return true;
+			}
 			return false;
+		});
+
+	// Check by OriginalFilename from VERSIONINFO — catches renamed binaries.
+	bool foundByOrigName = false;
+	if (!foundByName) {
+		std::vector<Common::ProcessInfo> procs = Common::EnumerateProcesses();
+		for (const auto& proc : procs) {
+			std::wstring origName = GetProcessOriginalFilename(proc.processId);
+			if (origName.empty()) continue;
+			if (detectedProcessNames.count(origName)) {
+				ReportIllegalInfo("Found hack tools (renamed): "
+					+ Common::wideStringToString(proc.processName)
+					+ " [original: " + Common::wideStringToString(origName) + "]");
+				foundByOrigName = true;
+				break;
+			}
 		}
-		}))
+	}
+
+	if (foundByName || foundByOrigName)
 	{
 		// Close the game client after detecting illegal programs
 		ExitGameProcess();

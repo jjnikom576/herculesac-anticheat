@@ -29,12 +29,15 @@ struct XorStr {
 
 // ESTR("literal") — evaluates to const char* of a stack-decrypted copy.
 // The XorStr is stored in read-only data; the plain text only lives on stack.
+// ESTR("literal") — evaluates to const char* of a thread-local decrypted copy.
+// thread_local ensures each thread gets its own _buf so concurrent callers
+// cannot corrupt each other's plaintext.
 #define ESTR(s)                                                              \
     ([]{                                                                     \
         static constexpr hac::security::XorStr<sizeof(s),                   \
             static_cast<uint8_t>((__LINE__ * 31 + __COUNTER__) & 0xFF)>     \
             _enc(s);                                                         \
-        static char _buf[sizeof(s)];                                         \
+        thread_local char _buf[sizeof(s)];                                   \
         _enc.decrypt(_buf);                                                  \
         return static_cast<const char*>(_buf);                               \
     }())

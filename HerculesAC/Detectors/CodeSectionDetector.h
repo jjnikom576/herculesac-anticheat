@@ -9,6 +9,9 @@ namespace hac { namespace detectors {
 // baseline, then re-hashes on every subsequent poll and reports divergence.
 class CodeSectionDetector final : public IDetector {
 public:
+    // Capture baseline at construction time — before any cheat can inject.
+    CodeSectionDetector();
+
     std::string_view              Name()     const noexcept override;
     hac::reporting::DetectionKind Kind()     const noexcept override;
     std::chrono::milliseconds     Interval() const noexcept override;

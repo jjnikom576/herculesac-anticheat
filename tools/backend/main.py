@@ -13,6 +13,7 @@ API
 """
 
 import json
+import os
 import time
 import asyncio
 import sqlite3
@@ -21,7 +22,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, List
 
-from fastapi import FastAPI, Request, Query, HTTPException
+from fastapi import FastAPI, Request, Query, Header, HTTPException, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
@@ -29,7 +30,19 @@ from fastapi.templating import Jinja2Templates
 DB_PATH   = Path(__file__).parent / "events.db"
 TEMPLATES = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
-app = FastAPI(title="HerculesAC Telemetry", version="1.0.0")
+# API key: set HAC_API_KEY env var before starting the server.
+# If unset the server refuses all write/delete requests (fail-secure).
+_API_KEY: str = os.environ.get("HAC_API_KEY", "")
+
+app = FastAPI(title="HerculesAC Telemetry", version="1.1.0")
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+def require_api_key(x_api_key: str = Header(default="")):
+    """Dependency: enforce X-Api-Key header on write / destructive endpoints."""
+    if not _API_KEY:
+        raise HTTPException(503, "Server not configured: HAC_API_KEY env var is unset")
+    if x_api_key != _API_KEY:
+        raise HTTPException(403, "Invalid or missing X-Api-Key header")
 
 # ── DB init ───────────────────────────────────────────────────────────────────
 async def init_db():
@@ -82,7 +95,7 @@ def row_to_dict(row):
     }
 
 # ── POST /v1/events ───────────────────────────────────────────────────────────
-@app.post("/v1/events", status_code=204)
+@app.post("/v1/events", status_code=204, dependencies=[Depends(require_api_key)])
 async def ingest_events(request: Request):
     body = await request.body()
     try:
@@ -141,7 +154,7 @@ async def list_events(
     return [row_to_dict(r) for r in rows]
 
 # ── DELETE /v1/events ─────────────────────────────────────────────────────────
-@app.delete("/v1/events", status_code=204)
+@app.delete("/v1/events", status_code=204, dependencies=[Depends(require_api_key)])
 async def clear_events():
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("DELETE FROM events")
