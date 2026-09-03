@@ -32,7 +32,7 @@ VOID PrintProcessName(PEPROCESS processObject)
 OB_PREOP_CALLBACK_STATUS preThreadCallback(PVOID RegistrationContext, POB_PRE_OPERATION_INFORMATION pOperationInformation)
 {
 	UNREFERENCED_PARAMETER(RegistrationContext);
-	if (GetProcessIdByThreadObject((PETHREAD)pOperationInformation->Object) == (HANDLE)17608)
+	if (g_pidTable.Contains(static_cast<ULONG>((ULONG_PTR)GetProcessIdByThreadObject((PETHREAD)pOperationInformation->Object))))
 	{
 
 		if (pOperationInformation->Operation == OB_OPERATION_HANDLE_CREATE)  
@@ -57,7 +57,7 @@ OB_PREOP_CALLBACK_STATUS preThreadCallback(PVOID RegistrationContext, POB_PRE_OP
 OB_PREOP_CALLBACK_STATUS preProcessCallback(PVOID RegistrationContext, POB_PRE_OPERATION_INFORMATION pOperationInformation)
 {
 	UNREFERENCED_PARAMETER(RegistrationContext);
-	if (GetProcessIdByProcessObject((PEPROCESS)pOperationInformation->Object) == (HANDLE)17608)
+	if (g_pidTable.Contains(static_cast<ULONG>((ULONG_PTR)GetProcessIdByProcessObject((PEPROCESS)pOperationInformation->Object))))
 	{
 		
 		if (pOperationInformation->Operation == OB_OPERATION_HANDLE_CREATE) 
