@@ -3,11 +3,12 @@
 #include "Threads/ActiveThread.h"
 #include "Hook/DetoursHook/HookCallSet/functionSet.h"
 #include "Globals.h"
-#include "../Common/Hash/MD5/MD5.h"
+#include <sodium.h>
+#include <fstream>
 
 Logger logger;
 
-std::map<std::wstring, std::wstring> fileMd5Value;
+static hac::manifest::Manifest g_manifest;
 
 
 void ReportProcessInfo()
@@ -62,26 +63,45 @@ void CleanupSharedMemory()
 
 BOOL IsWhitelistCurrentProcess()
 {
-    TCHAR szFileName[256];
-    GetModuleFileName(NULL, szFileName, 256);
-    std::wstring fileMd5 = Common::stringToWideString(calculateMD5(Common::wideStringToString(szFileName)));
-    if (std::any_of(fileMd5Value.begin(), fileMd5Value.end(), [fileMd5, szFileName](const auto& pair) {
+	if (g_manifest.WhitelistSha256().empty()) return FALSE;
 
-        if (_wcsicmp(pair.second.c_str(), fileMd5.c_str()) == 0) 
-        {
-            logger.outDebug(_T("This CurrentProcess is Whitelist: %s; will skip hooking"), szFileName);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-        }))
-    {
+	TCHAR szFileName[MAX_PATH] = {};
+	GetModuleFileName(NULL, szFileName, MAX_PATH);
 
-        return TRUE;
-    }
-    return FALSE;
+	// Hash the current process image with SHA-256 via libsodium.
+	std::ifstream f(szFileName, std::ios::binary);
+	if (!f) return FALSE;
+	crypto_hash_sha256_state st;
+	crypto_hash_sha256_init(&st);
+	std::vector<uint8_t> buf(64 * 1024);
+	while (f)
+	{
+		f.read(reinterpret_cast<char*>(buf.data()), buf.size());
+		auto got = static_cast<size_t>(f.gcount());
+		if (got == 0) break;
+		crypto_hash_sha256_update(&st, buf.data(), got);
+	}
+	uint8_t h[crypto_hash_sha256_BYTES];
+	crypto_hash_sha256_final(&st, h);
+
+	static const char* d = "0123456789abcdef";
+	std::string hex;
+	hex.reserve(64);
+	for (auto b : h)
+	{
+		hex.push_back(d[b >> 4]);
+		hex.push_back(d[b & 0xF]);
+	}
+
+	for (const auto& allowed : g_manifest.WhitelistSha256())
+	{
+		if (allowed == hex)
+		{
+			logger.outDebug(_T("Whitelist match (%s); skipping hooks"), szFileName);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 void SetupHook()
@@ -98,14 +118,20 @@ void UnHook()
 
 void LoadConfig(HINSTANCE hinstDLL)
 {
-    std::wstring filename = FileSystem::GetModuleDirectory(hinstDLL) + _T("hac.dat");
-    logger.outDebug(_T("File path: %s"), filename.c_str());
-    int md5Count = Common::WStringToInt(FileSystem::ReadIniValue(filename, L"MD5", L"Count"));
-
-    for (int i = 0; i < md5Count; i++)
-    {
-        fileMd5Value[L"MD5" + Common::IntToWString(i)] = FileSystem::ReadIniValue(filename, L"MD5", L"hash" + Common::IntToWString(i));
-    }
+	std::wstring root = FileSystem::GetModuleDirectory(hinstDLL);
+	std::wstring manifest_path = root + L"hac.manifest";
+	if (g_manifest.Load(manifest_path) != hac::manifest::ManifestError::Ok)
+	{
+		logger.Log("GameProtect: manifest missing/malformed; refusing to hook");
+		return;
+	}
+	uint8_t pk[32];
+	std::memcpy(pk, hac::manifest::kEmbeddedPublicKey.data(), 32);
+	if (g_manifest.VerifySignature(pk) != hac::manifest::ManifestError::Ok)
+	{
+		logger.Log("GameProtect: manifest signature invalid; refusing to hook");
+		return;
+	}
 }
 
 void InitHook()

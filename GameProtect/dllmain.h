@@ -22,6 +22,8 @@
 #include "../Common/IPC/SharedMemory/SharedMemory.h"
 #include "../Common/FileSystem/FileSystem.h"
 #include "../Common/Logger/Logger.h"
+#include "../Common/Manifest/Manifest.h"
+#include "../Common/Manifest/PublicKey.h"
 
 GAME_CLIENT GetSharedData();
 extern "C" __declspec(dllexport) SharedMemory * GetSharedMemoryPtr();
