@@ -43,7 +43,7 @@ v143) contains seven projects grouped into a **user-mode** folder and a
 | `GameLauncher`   | `.exe`       | x64      | Thin bootstrapper the player double-clicks. Locates its own directory and spawns `HerculesAC\HerculesAC.aes` (post-VMProtect binary), passing the game path on the command line. |
 | `HerculesAC`     | `.exe`       | x64      | The watchdog.  Verifies the signed `hac.manifest` (Ed25519 signature + per-module SHA-256), launches the game client, spawns both `GameMon` bitness variants, self-hooks `BaseThreadInitThunk` + `CreateThread` for self-defense, scans the process list / windows / resource icons / version strings for known hack tools, and CRC32-verifies its own hooks. |
 | `GameMon`        | `.exe`       | x86 + x64 | Per-bitness monitor.  Loads `GameProtect(64).dll`, opens shared memory and publishes the game PID / paths for the injected DLLs to consume. |
-| `GameProtect`    | `.dll`       | x86 + x64 | The globally-injected hook DLL.  `SetWindowsHookEx(WH_GETMESSAGE, …)` from `GameMon` causes Windows to broadcast this DLL into every UI process on the desktop.  In `DllMain` it reads the shared memory, then Detours-hooks `ReadProcessMemory` / `WriteProcessMemory`.  Any call whose target PID equals the protected game PID triggers termination logic. |
+| `GameProtect`    | `.dll`       | x86 + x64 | Targeted hook DLL.  `HerculesAC` injects it **only** into the game process via `CreateRemoteThread + LoadLibraryW`.  In `DllMain` it opens shared memory, then Detours-hooks `ReadProcessMemory` / `WriteProcessMemory`.  Any call whose target PID equals the protected game PID triggers termination logic.  (M3: global `WH_GETMESSAGE` hook removed.) |
 | `Bypass`         | `.dll`       | x86 + x64 | Standalone experiment showing tricks to *fool* the checks — hides `OLLYDBG` from `FindWindowW`, freezes a CRC32 function via `Sleep(-1)`, contains an x64 MASM stub (`Asm\AsmCallset.asm`).  Not loaded by the shipping product; kept for research. |
 | `ExampleDLL`     | `.dll`       | x86 + x64 | Minimal “Hello DLL” used to test the DLL-injection paths. |
 | `herculeskernel` | `.sys` (KMDF-style WDM) | x64 + ARM64 | Optional ring-0 driver.  Registers `PsProcessType` / `PsThreadType` `ObRegisterCallbacks` at altitude `321000` and strips `PROCESS_VM_READ`, `PROCESS_VM_WRITE` and `THREAD_SUSPEND_RESUME` from any handle opened against the protected PID. |
@@ -69,36 +69,36 @@ and Microsoft Detours (`Common\Detours\{x86,x64}\detours.lib`).
              │                       │                          │
              ▼                       ▼                          ▼
    ┌──────────────────┐    ┌──────────────────┐      ┌──────────────────┐
-   │  cstrike.exe     │    │  GameMon.aes     │      │  GameMon64.aes   │
-   │  (game client)   │    │  (x86 monitor)   │      │  (x64 monitor)   │
-   └──────────────────┘    └────────┬─────────┘      └────────┬─────────┘
-                                    │ LoadLibrary               │
-                                    ▼                           ▼
-                          ┌──────────────────┐        ┌──────────────────┐
-                          │ GameProtect.dll  │        │ GameProtect64.dll│
-                          │  SetWindowsHookEx│        │  SetWindowsHookEx│
-                          │  (WH_GETMESSAGE) │        │  (WH_GETMESSAGE) │
-                          └────────┬─────────┘        └────────┬─────────┘
-                                   │  Windows broadcasts the DLL into
-                                   │  every UI process that receives a
-                                   ▼  message from the hook chain
-                          ┌────────────────────────────────────────────┐
-                          │  DllMain in every UI process:              │
-                          │   • read hac.manifest / whitelist self by  │
-                          │     SHA-256 (whitelist_sha256[])           │
-                          │   • open named shared memory (game PID)    │
-                          │   • Detours-hook ReadProcessMemory /       │
-                          │     WriteProcessMemory                     │
-                          │   • if caller targets the game PID and     │
-                          │     exceeds a rate threshold → terminate   │
-                          │     the game (deny-by-suicide)             │
-                          └────────────────────────────────────────────┘
+   │  cstrike.exe ◄───┼────┤  HerculesAC      │      │  GameMon64.aes   │
+   │  (game client)   │    │  CreateRemoteThread│     │  (x64 monitor)   │
+   │                  │    │  + LoadLibraryW   │      └────────┬─────────┘
+   │  GameProtect64   │    └──────────────────┘               │ LoadLibrary
+   │    .dll loaded   │                                        ▼
+   │    (M3 targeted) │                              ┌──────────────────┐
+   └──────────────────┘                              │ GameProtect64.dll│
+                                                     │  (x64 monitor    │
+                                                     │   copy, no hook) │
+                                                     └──────────────────┘
+
+   ┌────────────────────────────────────────────┐
+   │  DllMain in game process only (M3):        │
+   │   • read hac.manifest + verify signature   │
+   │   • open named shared memory (game PID)    │
+   │   • Detours-hook ReadProcessMemory /       │
+   │     WriteProcessMemory                     │
+   │   • if caller targets the game PID and     │
+   │     exceeds a rate threshold → terminate   │
+   │     the game (deny-by-suicide)             │
+   └────────────────────────────────────────────┘
 
            (optional, ring-0)
-   ┌───────────────────────────┐
-   │  herculeskernel.sys       │  Ob* callbacks strip VM_READ/WRITE
-   │  altitude 321000          │  and SUSPEND_RESUME from any handle
-   └───────────────────────────┘  opened against the protected PID
+   ┌────────────────────────────────────────────┐
+   │  herculeskernel.sys (altitude 321000)      │
+   │  • Ob* callbacks strip VM_READ/WRITE and   │
+   │    SUSPEND_RESUME from handles to game PID │
+   │  • PsSetCreateThreadNotifyRoutine: logs    │
+   │    new threads created in protected PIDs   │
+   └────────────────────────────────────────────┘
 ```
 
 ### Launch sequence (annotated)
@@ -133,21 +133,23 @@ and Microsoft Detours (`Common\Detours\{x86,x64}\detours.lib`).
    - `StartServer` polls every 5 s: if the game process is gone the
      loop exits; if a known bad process / window shows up it kills
      the game (`ExitGameProcess`).
-3. **`GameMon::WinMain`** — parses the JSON, singleton-locks
+3. **`HerculesAC::InitProcess` (M3 injection)** — after the game process
+   is created, `hac::driver::StartProtect(pid)` registers it with the
+   kernel driver via `IOCTL_START_PROTECT`, and `hac::inject::InjectDll`
+   calls `CreateRemoteThread + LoadLibraryW` to load `GameProtect64.dll`
+   (x64 build) directly into the game process.  No global hook; no other
+   process is touched.
+4. **`GameMon::WinMain`** — parses the JSON, singleton-locks
    (`GameMonMutexName` / `GameMonMutexName64`), loads
-   `GameProtect(64).dll`, opens the shared memory
-   (`hacSharedMemory` / `hacSharedMemory64`), writes the current
-   game PID / client name / game directory into it, then calls
-   `SetupMsgHook(hInst)` which installs the global `WH_GETMESSAGE`
-   hook.  From that point on every UI process on the desktop that
-   receives a queued message will load `GameProtect(64).dll`.
-4. **`GameProtect::DllMain`** — in *every* process the hook is
-   injected into: read `hac.manifest`, SHA-256 the module file,
-   whitelist self if the hash matches an entry in
-   `whitelist_sha256[]`, otherwise install Detours hooks for
-   `ReadProcessMemory` and `WriteProcessMemory` and share the same
-   `SharedMemory` pointer with the host via the exported
-   `GetSharedMemoryPtr`.
+   `GameProtect(64).dll` for its own reference, opens the shared memory
+   (`hacSharedMemory` / `hacSharedMemory64`), writes the current game PID /
+   client name / game directory into it.  `SetupHook` / `UnHook` are no-ops
+   (global `WH_GETMESSAGE` hook removed in M3).
+5. **`GameProtect::DllMain`** — runs *only* in the game process (M3):
+   reads and verifies `hac.manifest` (Ed25519 signature), installs Detours
+   hooks for `ReadProcessMemory` and `WriteProcessMemory`, and exports
+   `GetSharedMemoryPtr`.  `IsWhitelistCurrentProcess` removed — targeted
+   injection makes per-process whitelisting unnecessary.
 
 ### IPC — shared memory schema
 
