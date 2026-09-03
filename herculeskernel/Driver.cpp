@@ -6,11 +6,12 @@ VOID InitProtect(IN PDRIVER_OBJECT pDriver_Object)
 {
     SetThreadCallbacks(pDriver_Object);
     SetProcessCallbacks(pDriver_Object);
+    InitThreadNotify();
 }
-
 
 VOID UninstallProtect()
 {
+    UninstallThreadNotify();
     UnThreadCallbacks();
     UnProcessCallbacks();
 }

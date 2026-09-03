@@ -6,8 +6,10 @@
 VOID SetThreadCallbacks(IN PDRIVER_OBJECT pDriver_Object);
 VOID SetProcessCallbacks(IN PDRIVER_OBJECT pDriver_Object);
 
-
 VOID UnThreadCallbacks();
 VOID UnProcessCallbacks();
+
+VOID InitThreadNotify();
+VOID UninstallThreadNotify();
 
 #endif // !_CALLBACKS_H

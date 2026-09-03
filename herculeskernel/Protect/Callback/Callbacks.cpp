@@ -159,3 +159,27 @@ VOID SetThreadCallbacks(IN PDRIVER_OBJECT pDriver_Object)
 		ObUnRegisterCallbacks(g_obProcessHandle);
 	}
 }
+
+static VOID OnThreadNotify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create)
+{
+	UNREFERENCED_PARAMETER(ThreadId);
+	if (!Create)
+		return;
+	ULONG pid = static_cast<ULONG>((ULONG_PTR)ProcessId);
+	if (g_pidTable.Contains(pid)) {
+		outLog("ThreadNotify: new thread in protected PID %lu", pid);
+	}
+}
+
+VOID InitThreadNotify()
+{
+	NTSTATUS status = PsSetCreateThreadNotifyRoutine(OnThreadNotify);
+	if (!NT_SUCCESS(status)) {
+		outLog("PsSetCreateThreadNotifyRoutine failed: 0x%08X", status);
+	}
+}
+
+VOID UninstallThreadNotify()
+{
+	PsRemoveCreateThreadNotifyRoutine(OnThreadNotify);
+}
