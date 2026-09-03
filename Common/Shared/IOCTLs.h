@@ -8,4 +8,24 @@
 #define IOCTL_CHECK_SYMBOLICLINK CTL_CODE(FILE_DEVICE_UNKNOWN, 0x802, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define IOCTL_LOAD_DEBUGGER_DATA CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
+// Payload for IOCTL_START_PROTECT: user-mode → kernel
+// image_name is null-terminated wide string; expected_sha256 is 32 raw bytes
+typedef struct _IOCTL_START_PROTECT_REQUEST {
+	ULONG	pid;
+	WCHAR	image_name[260];
+	UCHAR	expected_sha256[32];
+} IOCTL_START_PROTECT_REQUEST, *PIOCTL_START_PROTECT_REQUEST;
+
+typedef struct _IOCTL_STOP_PROTECT_REQUEST {
+	ULONG pid;
+} IOCTL_STOP_PROTECT_REQUEST, *PIOCTL_STOP_PROTECT_REQUEST;
+
+typedef struct _IOCTL_QUERY_STATUS_RESPONSE {
+	ULONG active_protection_count;
+	ULONG driver_version;	// e.g. 0x00020000 for M2 v2.0
+} IOCTL_QUERY_STATUS_RESPONSE, *PIOCTL_QUERY_STATUS_RESPONSE;
+
+// Symbolic link the user-mode client opens
+#define HAC_DEVICE_USERMODE_PATH L"\\\\.\\HerculesAC"
+
 #endif // !_IOCTLS_H
