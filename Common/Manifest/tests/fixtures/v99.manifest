@@ -1,0 +1,20 @@
+{
+  "version": 99,
+  "issued_at": "2026-09-15T00:00:00Z",
+  "game": {
+    "id": "cstrike-1.6",
+    "starter": "cstrike.exe",
+    "client": "cstrike.exe",
+    "monitor_x86": "GameMon.aes",
+    "monitor_x64": "GameMon64.aes"
+  },
+  "modules": [
+    { "path": "module_a.bin", "sha256": "39557315215be0f6922cec45d29336c8f72198032cababdc5ec0672d45e894ad", "size": 128 },
+    { "path": "module_b.bin", "sha256": "8bfe96b7ab7217459a0d2f0b4b020a21e5976fec991eba4803711536093ca1b2", "size": 256 }
+  ],
+  "whitelist_sha256": [],
+  "reporting": {
+    "endpoint": "https://ac-report.example.com/v1/events",
+    "server_cert_pin_sha256": "abcdef"
+  }
+}

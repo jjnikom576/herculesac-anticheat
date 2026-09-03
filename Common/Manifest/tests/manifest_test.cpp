@@ -130,3 +130,13 @@ TEST(PublicKey, VerifiesTheFixtureManifest) {
 	std::memcpy(pk, hac::manifest::kEmbeddedPublicKey.data(), 32);
 	EXPECT_EQ(m.VerifySignature(pk), ManifestError::Ok);
 }
+
+TEST(ManifestLoad, OversizedManifestRejected) {
+	Manifest m;
+	EXPECT_EQ(m.Load(L"fixtures/oversized.manifest"), ManifestError::TooLarge);
+}
+
+TEST(ManifestLoad, UnsupportedVersionRejected) {
+	Manifest m;
+	EXPECT_EQ(m.Load(L"fixtures/v99.manifest"), ManifestError::UnsupportedVersion);
+}
