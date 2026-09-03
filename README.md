@@ -432,13 +432,7 @@ Ranked roughly by severity.  Everything here is a real observation
 from the current tree — the code is functional research-grade and
 does not pretend otherwise.
 
-1. **Hard-coded protected PID `17608`** in
-   `herculeskernel/Protect/Callback/Callbacks.cpp` (`preThreadCallback`
-   and `preProcessCallback`).  The driver only ever protects that one
-   PID; a real integration should learn the game PID via
-   `IOCTL_START_PROTECT` (already defined in `Common/Shared/IOCTLs.h`
-   but unused).
-2. **Absolute paths in the batch files.**  `Project.bat` and the
+1. **Absolute paths in the batch files.**  `Project.bat` and the
    manifest generation step are now repo-relative, but `vmp.bat`'s
    `VMProtect_Con.exe` path still points outside the checkout
    (`..\anticheat\VMProtect Ultimate v3.3.1 …`).  Convert it to a
@@ -506,6 +500,12 @@ f5e9b71 feat: add handle detection
 0e49c1b / f84db7d / aca93fc feat: add automate script  (Builder / vmp / MD5 chain)
 ```
 
-The most active detection surface is user-mode signature matching
-(icon + version-info); the kernel driver is still in a “PoC with
-hard-coded PID” state.
+**M2 Kernel Authority (2026-09-03):** The driver now manages a dynamic PID
+table via a `\Device\HerculesAC` IOCTL surface.  `IOCTL_START_PROTECT`
+(requires SeDebugPrivilege) inserts a PID; `IOCTL_STOP_PROTECT` removes it;
+`IOCTL_QUERY_STATUS` returns the current count and driver version
+(`0x00020000`).  Ob callbacks consult the table at runtime — the hard-coded
+PID 17608 has been removed.  `HerculesAC.exe::InitProcess` calls
+`StartProtect(pid)` automatically after launching the game starter.
+Build: `Builder.bat` now routes the kernel target through VS 2022 MSBuild
+(required by WDK 26100).  See `docs/testing/m2-e2e-driver-load.md`.
