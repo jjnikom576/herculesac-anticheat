@@ -1,0 +1,10 @@
+# Force binary treatment for anti-cheat manifest + signature fixtures and
+# any raw byte payloads. Without this, `core.autocrlf=true` on other dev
+# machines can silently CRLF-normalize the bytes and invalidate Ed25519
+# signatures produced by tools/sign-manifest.
+*.sig    binary
+*.manifest binary
+*.bin    binary
+*.aes    binary
+*.lib    binary
+*.pdb    binary
