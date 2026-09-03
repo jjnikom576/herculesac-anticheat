@@ -87,21 +87,7 @@ jobs:
 
       - name: Install WDK 10.0.26100
         shell: powershell
-        run: |
-          # Try winget first (pre-installed on windows-2022, avoids CDN redirect issues).
-          $wgResult = winget install --id Microsoft.WindowsDriverKit.10.0.26100 `
-            --accept-package-agreements --accept-source-agreements --silent 2>&1
-          if ($LASTEXITCODE -ne 0) {
-            Write-Warning "winget failed ($LASTEXITCODE), falling back to direct download"
-            $out = "$env:TEMP\wdksetup.exe"
-            curl.exe -L --retry 3 --retry-delay 10 -o $out `
-              "https://go.microsoft.com/fwlink/?linkid=2294280"
-            $size = (Get-Item $out -ErrorAction SilentlyContinue).Length
-            if (-not $size -or $size -lt 1MB) {
-              throw "WDK download incomplete (${size} bytes) — skipping kernel build"
-            }
-            Start-Process -FilePath $out -ArgumentList "/q" -Wait
-          }
+        run: winget install --id Microsoft.WindowsDriverKit.10.0.26100 --accept-package-agreements --accept-source-agreements --silent
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2
