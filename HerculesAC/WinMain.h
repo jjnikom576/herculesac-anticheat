@@ -7,6 +7,7 @@
 #include <psapi.h>
 #include <shlwapi.h>
 #include <string>
+#include <cstring>
 #include <TlHelp32.h>
 #include <vector>
 #include <unordered_set>
@@ -26,6 +27,8 @@
 #include "../Common/FileSystem/FileSystem.h"
 #include "../Common/Logger/Logger.h"
 #include "../Common/Hash/Crc32.h"
+#include "../Common/Manifest/Manifest.h"
+#include "../Common/Manifest/PublicKey.h"
 #include "./HookCallSet/functionSet.h"
 #include "../Common/include/json/json.h"
 #include "../Common/include/List/vectorExt.h"

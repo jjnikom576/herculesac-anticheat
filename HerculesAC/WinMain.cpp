@@ -131,50 +131,54 @@ PROCESS_INFORMATION StartProcess(std::wstring processPath, std::wstring procName
 	return pi;
 }
 
-// The specified program was not found
-void NoProgramFound(std::wstring sText)
-{
-	::MessageBox(NULL, sText.c_str(), _T("HerculesAC Error:"), MB_ICONWARNING | MB_SYSTEMMODAL);
-	exit(0);
-}
+static hac::manifest::Manifest g_manifest;
 
+static void FailAndExit(const wchar_t* reason)
+{
+	logger.outDebug(_T("Manifest verification failed: %s"), reason);
+	::MessageBox(NULL, reason, _T("HerculesAC Error:"), MB_ICONWARNING | MB_SYSTEMMODAL);
+	ExitProcess(1);
+}
 
 void LoadConfig()
 {
 	VMProtectBeginVirtualization("VMP");
 
-	// Traverse the game client directory
-	std::vector<std::wstring> GameDir = FileSystem::TraverseDirectory(Global::GamePath);
-	// Traverse the anti-cheat directory
-	std::vector<std::wstring> CurDir = FileSystem::TraverseDirectory(FileSystem::GetModuleDirectory(NULL));
+	std::wstring root = FileSystem::GetModuleDirectory(NULL);
+	std::wstring manifest_path = root + L"hac.manifest";
 
-	std::wstring filename = FileSystem::GetModuleDirectory(NULL) + _T("hac.dat");
-	logger.outDebug(_T("File path: %s"), filename.c_str());
-
-	config[L"starter"] = FileSystem::ReadIniValue(filename, L"Game", L"starter");
-	config[L"Client"] = FileSystem::ReadIniValue(filename, L"Game", L"Client");
-	config[L"GameMon"] = FileSystem::ReadIniValue(filename, L"Game", L"GameMon");
-	config[L"GameMon64"] = FileSystem::ReadIniValue(filename, L"Game", L"GameMon64");
- 
-	if (config[L"starter"].empty() ||
-		config[L"Client"].empty() ||
-		config[L"GameMon"].empty() ||
-		config[L"GameMon64"].empty())
+	auto err = g_manifest.Load(manifest_path);
+	if (err != hac::manifest::ManifestError::Ok)
 	{
-		goto NoFound;
+		FailAndExit(L"hac.manifest is missing or malformed. Please reinstall the game.");
 	}
 
-	if (!FindProgram(GameDir, config[L"starter"]) ||
-		!FindProgram(GameDir, config[L"Client"]) ||
-		!FindProgram(CurDir, config[L"GameMon"]) ||
-		!FindProgram(CurDir, config[L"GameMon64"]))
+	uint8_t pk[32];
+	std::memcpy(pk, hac::manifest::kEmbeddedPublicKey.data(), 32);
+	err = g_manifest.VerifySignature(pk);
+	if (err != hac::manifest::ManifestError::Ok)
 	{
-		goto NoFound;
+		FailAndExit(L"hac.manifest signature is invalid. Please reinstall the game.");
 	}
-	return;
 
-NoFound:
-	NoProgramFound(_T("The file is corrupted, please reinstall the game!"));
+	for (const auto& mod : g_manifest.Modules())
+	{
+		std::wstring absolute = root + mod.path;
+		err = g_manifest.VerifyModule(absolute);
+		if (err != hac::manifest::ManifestError::Ok)
+		{
+			std::wstring msg = L"Corrupted module: " + mod.path;
+			FailAndExit(msg.c_str());
+		}
+	}
+
+	// Populate the legacy `config` map for the rest of the code path that still
+	// reads config[L"starter"] / config[L"Client"] / config[L"GameMon"] / etc.
+	config[L"starter"] = g_manifest.Game().starter;
+	config[L"Client"] = g_manifest.Game().client;
+	config[L"GameMon"] = g_manifest.Game().monitor_x86;
+	config[L"GameMon64"] = g_manifest.Game().monitor_x64;
+
 	VMProtectEnd();
 }
 
