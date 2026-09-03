@@ -42,10 +42,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Manifest.cpp" />
+    <ClCompile Include="..\include\json\json_reader.cpp" />
+    <ClCompile Include="..\include\json\json_value.cpp" />
+    <ClCompile Include="..\include\json\json_writer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Manifest.h" />
     <ClInclude Include="Errors.h" />
+    <ClInclude Include="..\include\json\json_tool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
