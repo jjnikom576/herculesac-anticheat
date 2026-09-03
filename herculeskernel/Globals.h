@@ -3,6 +3,7 @@
 #ifndef _GLOBALS_H
 #define _GLOBALS_H
 
+#include "Protect/PidTable.h"
 
 typedef struct _PROTECT_OBJECT_ENTRY
 {
@@ -20,6 +21,9 @@ typedef struct _PROTECT_OBJECT
 
 extern PVOID g_obProcessHandle;
 extern PVOID g_obThreadHandle;
+
+extern hac::PidTable g_pidTable;
+extern PDEVICE_OBJECT g_deviceObject;
 
 // extern PROTECT_OBJECT g_ProtectObjectList;
 
