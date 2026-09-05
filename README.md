@@ -15,20 +15,48 @@ binaries together.
 > here (global message hooks, kernel `Ob*` callbacks, VMProtect) are
 > heavy-handed and will trip real EDR/AV products.
 
+## Origin and attribution
+
+This repository is a modified derivative of
+[un4ckn0wl3z/HerculesAC](https://github.com/un4ckn0wl3z/HerculesAC), based on
+upstream revision
+[`df90313e483e49738bbf87f82bbdc148e1d32329`](https://github.com/un4ckn0wl3z/HerculesAC/commit/df90313e483e49738bbf87f82bbdc148e1d32329).
+This derivative is published with permission: the original author granted
+permission to modify and publicly redistribute it for educational purposes.
+Copyright in the original source remains with the original author(s); this
+repository does not assign or imply a standard open-source license for that
+source.
+
+Nikom Kawchoem (`jjnikom576`) is the maintainer of these modifications.
+Verified major additions in this derivative include:
+
+- signed manifest and module verification;
+- dynamic kernel PID protection;
+- targeted game-only injection;
+- defensive detectors;
+- telemetry and backend work; and
+- CI, tests, and security hardening.
+
+`Bypass` is an experimental validation fixture restricted to systems owned or
+explicitly authorized by the researcher and isolated lab environments. It is
+not a production component. This derivative does not imply endorsement by the
+upstream author.
+
 ---
 
 ## Table of contents
 
-1. [Component overview](#component-overview)
-2. [Runtime architecture](#runtime-architecture)
-3. [Detection techniques](#detection-techniques)
-4. [Configuration file — `hac.manifest`](#configuration-file--hacmanifest)
-5. [Repository layout](#repository-layout)
-6. [Third-party code](#third-party-code)
-7. [Building](#building)
-8. [Deployment layout](#deployment-layout)
-9. [Known issues / TODO](#known-issues--todo)
-10. [Recent history](#recent-history)
+1. [Origin and attribution](#origin-and-attribution)
+2. [Component overview](#component-overview)
+3. [Runtime architecture](#runtime-architecture)
+4. [Detection techniques](#detection-techniques)
+5. [Configuration file — `hac.manifest`](#configuration-file--hacmanifest)
+6. [Repository layout](#repository-layout)
+7. [Third-party code](#third-party-code)
+8. [Building](#building)
+9. [Deployment layout](#deployment-layout)
+10. [Known issues / TODO](#known-issues--todo)
+11. [Recent history](#recent-history)
 
 ---
 
