@@ -26,6 +26,10 @@ permission to modify and publicly redistribute it for educational purposes.
 Copyright in the original source remains with the original author(s); this
 repository does not assign or imply a standard open-source license for that
 source.
+Permission to publish this derivative does not grant downstream users rights
+to copy, modify, or redistribute the original source beyond permission from
+the original author. Anyone seeking to reuse the original source must contact
+the upstream author for reuse permission.
 
 Nikom Kawchoem (`jjnikom576`) is the maintainer of these modifications.
 Verified major additions in this derivative include:
@@ -37,10 +41,10 @@ Verified major additions in this derivative include:
 - telemetry and backend work; and
 - CI, tests, and security hardening.
 
-`Bypass` is an experimental validation fixture restricted to systems owned or
-explicitly authorized by the researcher and isolated lab environments. It is
-not a production component. This derivative does not imply endorsement by the
-upstream author.
+`Bypass` is an experimental validation fixture restricted to systems the
+researcher owns or has explicit authorization to test, and only within
+isolated lab environments. It is not a production component. This derivative
+does not imply endorsement by the upstream author.
 
 ---
 

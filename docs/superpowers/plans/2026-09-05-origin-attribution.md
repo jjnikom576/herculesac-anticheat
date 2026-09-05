@@ -41,12 +41,52 @@ Add `Origin and attribution` as the first entry and renumber the remaining entri
 Run:
 
 ```powershell
-rg -n "Origin and attribution|un4ckn0wl3z|df90313|published with permission|owned, isolated" README.md
+$readme = (Get-Content -Raw README.md) -replace '\s+', ' '
+$requiredPhrases = @(
+    '## Origin and attribution',
+    'https://github.com/un4ckn0wl3z/HerculesAC',
+    'df90313e483e49738bbf87f82bbdc148e1d32329',
+    'https://github.com/un4ckn0wl3z/HerculesAC/commit/df90313e483e49738bbf87f82bbdc148e1d32329',
+    'published with permission',
+    'permission to modify and publicly redistribute it for educational purposes',
+    'Copyright in the original source remains with the original author(s)',
+    'Permission to publish this derivative does not grant downstream users rights to copy, modify, or redistribute the original source beyond permission from the original author',
+    'Anyone seeking to reuse the original source must contact the upstream author for reuse permission',
+    'Nikom Kawchoem (`jjnikom576`) is the maintainer of these modifications',
+    'signed manifest and module verification',
+    'dynamic kernel PID protection',
+    'targeted game-only injection',
+    'defensive detectors',
+    'telemetry and backend work',
+    'CI, tests, and security hardening',
+    '`Bypass` is an experimental validation fixture restricted to systems the researcher owns or has explicit authorization to test, and only within isolated lab environments',
+    'It is not a production component',
+    'This derivative does not imply endorsement by the upstream author',
+    '1. [Origin and attribution](#origin-and-attribution)',
+    '2. [Component overview](#component-overview)',
+    '3. [Runtime architecture](#runtime-architecture)',
+    '4. [Detection techniques](#detection-techniques)',
+    '5. [Configuration file',
+    '#configuration-file--hacmanifest)',
+    '6. [Repository layout](#repository-layout)',
+    '7. [Third-party code](#third-party-code)',
+    '8. [Building](#building)',
+    '9. [Deployment layout](#deployment-layout)',
+    '10. [Known issues / TODO](#known-issues--todo)',
+    '11. [Recent history](#recent-history)'
+)
+foreach ($phrase in $requiredPhrases) {
+    if (-not $readme.Contains($phrase)) {
+        throw "Missing required README statement: $phrase"
+    }
+}
 git diff --check
 git diff -- README.md
 ```
 
-Expected: every required statement is present, Markdown whitespace checks pass, and only the intended README sections have changed.
+Expected: every required statement and table-of-contents anchor is checked
+independently, missing any phrase fails the loop, Markdown whitespace checks
+pass, and only the intended README sections have changed.
 
 - [ ] **Step 4: Commit and push**
 
