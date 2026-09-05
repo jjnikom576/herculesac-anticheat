@@ -62,8 +62,10 @@ jobs:
       - name: Run ReportingTests
         if: matrix.platform == 'x64'
         run: |
-          $exe = "Common\Reporting\tests\x64\${{ matrix.config }}\ReportingTests.exe"
-          if (Test-Path $exe) { & $exe } else { Write-Warning "Test binary not found: $exe" }
+          $exe = "Common\Reporting\tests\bin\x64\${{ matrix.config }}\ReportingTests.exe"
+          if (-not (Test-Path $exe)) { throw "Test binary not found: $exe" }
+          & $exe
+          if ($LASTEXITCODE -ne 0) { throw "ReportingTests failed (exit $LASTEXITCODE)" }
 
       # ── Upload build artifacts ─────────────────────────────────────────────
       - name: Upload binaries
@@ -85,7 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install WDK 10.0.26100
+      - name: Install WDK
         shell: powershell
         run: choco install windowsdriverkit11 -y --no-progress
 
@@ -96,7 +98,6 @@ jobs:
 
       - name: Build herculeskernel (Debug|x64)
         run: |
-          $msbuild = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
-          & $msbuild herculeskernel\herculeskernel.vcxproj `
+          msbuild herculeskernel\herculeskernel.vcxproj `
             /p:Configuration=Debug /p:Platform=x64 `
             /t:Build /v:m /nologo

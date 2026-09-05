@@ -46,7 +46,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>Reporting.lib;Manifest.lib;gtest.lib;winhttp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winhttp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);..\x64\$(Configuration)\;..\..\..\bin\x64\$(Configuration)\;..\..\..\Common\include\googletest\build\x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -57,6 +57,12 @@
   <ItemGroup>
     <ProjectReference Include="..\Reporting.vcxproj">
       <Project>{A3B1C2D4-E5F6-7890-ABCD-EF1234567890}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Manifest\Manifest.vcxproj">
+      <Project>{7D304826-15E9-4CCE-A096-381638A12BA0}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\include\googletest\build\gtest.vcxproj">
+      <Project>{780D6D12-5C95-4648-91D2-3DB110C0D142}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
