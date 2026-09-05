@@ -87,7 +87,7 @@ jobs:
 
       - name: Install WDK 10.0.26100
         shell: powershell
-        run: winget install --id Microsoft.WindowsDriverKit.10.0.26100 --accept-package-agreements --accept-source-agreements --silent
+        run: choco install windowsdriverkit11 -y --no-progress
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2
